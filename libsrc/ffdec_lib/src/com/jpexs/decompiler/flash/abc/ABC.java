@@ -16,11 +16,24 @@
  */
 package com.jpexs.decompiler.flash.abc;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import com.jpexs.decompiler.flash.EventListener;
 import com.jpexs.decompiler.flash.SWF;
 import com.jpexs.decompiler.flash.abc.avm2.AVM2Code;
 import com.jpexs.decompiler.flash.abc.avm2.AVM2ConstantPool;
 import com.jpexs.decompiler.flash.abc.avm2.AVM2Deobfuscation;
+import com.jpexs.decompiler.flash.abc.avm2.UnknownInstructionCode;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.AVM2Instruction;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.executing.CallPropertyIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.stack.PushStringIns;
@@ -54,24 +67,18 @@ import com.jpexs.decompiler.flash.abc.usages.MethodParamsMultinameUsage;
 import com.jpexs.decompiler.flash.abc.usages.MethodReturnTypeMultinameUsage;
 import com.jpexs.decompiler.flash.abc.usages.MultinameUsage;
 import com.jpexs.decompiler.flash.abc.usages.TypeNameMultinameUsage;
+import com.jpexs.decompiler.flash.dumpview.DumpInfo;
+import com.jpexs.decompiler.flash.helpers.NulWriter;
 import com.jpexs.decompiler.flash.helpers.SWFDecompilerPlugin;
+import com.jpexs.decompiler.flash.helpers.hilight.HighlightData;
+import com.jpexs.decompiler.flash.helpers.hilight.HighlightSpecialType;
 import com.jpexs.decompiler.flash.tags.ABCContainerTag;
 import com.jpexs.decompiler.flash.tags.Tag;
 import com.jpexs.decompiler.flash.types.annotations.Internal;
 import com.jpexs.decompiler.graph.CompilationException;
 import com.jpexs.decompiler.graph.DottedChain;
+import com.jpexs.helpers.MemoryInputStream;
 import com.jpexs.helpers.utf8.Utf8PrintWriter;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class ABC {
 
@@ -548,7 +555,15 @@ public class ABC {
             mb.init_scope_depth = ais.readU30("init_scope_depth");
             mb.max_scope_depth = ais.readU30("max_scope_depth");
             int code_length = ais.readU30("code_length");
-            mb.setCodeBytes(ais.readBytes(code_length, "code"));
+            //mb.setCodeBytes(ais.readBytes(code_length, "code"));
+            
+            DumpInfo codeLevelDi = ais.newDumpLevel("code", "Bytes");
+            int startCodeOffset = (int) ais.getPosition();
+            
+            mb.setCodeBytes(ais.readBytesInternal(code_length));
+            
+            ais.endDumpLevel();
+            
             int ex_count = ais.readU30("ex_count");
             mb.exceptions = new ABCException[ex_count];
             for (int j = 0; j < ex_count; j++) {
@@ -563,7 +578,32 @@ public class ABC {
             mb.traits = ais.readTraits("traits");
             bodies.add(mb);
             method_info.get(mb.method_info).setBody(mb);
+            
             ais.endDumpLevel();
+            
+            if (codeLevelDi != null) {
+            	try {
+	                ABCInputStream codeis = new ABCInputStream(new MemoryInputStream(mb.getCodeBytes()));
+	                codeis.dumpInfo = codeLevelDi;
+	                AVM2Code avm2Code = new AVM2Code(codeis, mb);
+	                avm2Code.removeWrongIndices(constants);
+	                avm2Code.compact();
+	                mb.setCode(avm2Code);
+	                //codeis.endDumpLevel(avm2Code);
+	                
+	                codeLevelDi.startByte = 0;
+	                codeLevelDi.previewValue = avm2Code;
+	                codeLevelDi.type = "instructions:";
+	                
+	                correctDumpInfoStart(codeLevelDi, startCodeOffset);
+	                
+	                if (codeLevelDi.parent != null)
+	                	codeLevelDi.parent.name = getMethodSignature(mb);
+	                
+	            } catch (UnknownInstructionCode | IOException ex) {
+	                logger.log(Level.SEVERE, null, ex);
+	            }
+            }
 
             SWFDecompilerPlugin.fireMethodBodyParsed(mb, swf);
         }
@@ -582,6 +622,148 @@ public class ABC {
          }
          //System.exit(0);*/
         SWFDecompilerPlugin.fireAbcParsed(this, swf);
+    }
+    
+    private String findMethodName(MethodBody mb) {
+        String result = "UNKNOWN";
+
+        if (mb == null) {
+            return result;
+        }
+
+        for (ClassInfo ci : class_info) {
+        	if (ci.cinit_index == mb.method_info) {
+        		for (ScriptInfo si : script_info) {
+        			for (Trait tr : si.traits.traits) {
+        				if (tr instanceof TraitClass && 
+        						((TraitClass)tr).class_info == class_info.indexOf(ci)) {
+        					result = tr.getPath (this).toString() + ".<cinit>";
+        					break;
+        				}
+        			}
+        		}
+        		break;
+        	}
+        	Traits traits = ci.static_traits;
+        	for (Trait trait : traits.traits) {
+                int cmi = -1;
+                if ((trait instanceof TraitFunction))
+                    cmi = ((TraitFunction) trait).method_info;
+                else if (trait instanceof TraitMethodGetterSetter)
+                    cmi = ((TraitMethodGetterSetter) trait).method_info;
+                if (cmi != mb.method_info)
+                    continue;
+
+                result = trait.getPath (this).toString();
+                break;
+            }
+
+            if (!result.equals("UNKNOWN"))
+                break;
+        }
+
+        if (!result.equals ("UNKNOWN"))
+            return result;
+
+        for (InstanceInfo ii : instance_info) {
+        	if (ii.iinit_index == mb.method_info) {
+        		result = ii.getName(constants).getName(
+        				constants, 
+        				new ArrayList<DottedChain>(constants.dottedChainCache.values()), 
+        				true) + ".<init>";
+        		break;
+        	}
+            Traits traits = ii.instance_traits;
+            for (Trait trait : traits.traits) {
+                int cmi = -1;
+                if ((trait instanceof TraitFunction))
+                    cmi = ((TraitFunction) trait).method_info;
+                else if (trait instanceof TraitMethodGetterSetter)
+                    cmi = ((TraitMethodGetterSetter) trait).method_info;
+                if (cmi != mb.method_info)
+                    continue;
+
+                result = trait.getPath(this).toString();
+                break;
+            }
+
+            if (!result.equals ("UNKNOWN"))
+                break;
+        }
+
+        return result;
+    }
+
+    
+    private String getMethodSignature(MethodBody mb) {
+    	String result = "method_body_info";
+    	
+    	MethodInfo mi = null;
+        if (method_info.size() <= mb.method_info || 
+        		(mi = method_info.get(mb.method_info)) == null) {
+        	return result;
+        }
+        
+        String name = mi.getName(constants);
+        if (name.equals("UNKNOWN")) {
+        	name = findMethodName(mb);
+        }
+    	String returnType = mi.getReturnTypeStr(
+    			new NulWriter() {
+    				
+    				String res = "";
+    				
+    				@Override
+    			    public NulWriter hilightSpecial(String text, HighlightSpecialType type, String specialValue, HighlightData data) {
+    					res += text;
+    					return super.hilightSpecial(text, type, specialValue, data);
+    				}
+    				
+    				public String toString() {
+    					return res;
+    				}
+    			}, 
+    			constants, 
+    			new ArrayList<DottedChain>(constants.dottedChainCache.values())).toString();
+    	String args = mi.getParamStr(
+    			new NulWriter() {
+    				
+    				String res = "";
+    				
+    				@Override
+    			    public NulWriter appendNoHilight(String str) {
+    					res += str;
+    					return super.appendNoHilight(str);
+    				}
+    				
+    				@Override
+    			    public NulWriter hilightSpecial(String text, HighlightSpecialType type, String specialValue, HighlightData data) {
+    					res += text;
+    					return super.hilightSpecial(text, type, specialValue, data);
+    				}
+    				
+    				@Override
+    			    public NulWriter append(String str) {
+    					res += str;
+    					return super.append(str);
+    				}
+    			    
+    				public String toString() {
+    					return res;
+    				}
+    			}, 
+    			constants, mb, 
+    			this, 
+    			new ArrayList<DottedChain>(constants.dottedChainCache.values())).toString();
+    	
+    	return String.format("%s(%s):%s", name, args, returnType);
+    }
+    
+    private void correctDumpInfoStart(DumpInfo di, int offset) {
+    	di.startByte += offset;
+    	for (DumpInfo child : di.getChildInfos()) {
+    		correctDumpInfoStart(child, offset);
+    	}
     }
 
     public void saveToStream(OutputStream os) throws IOException {
@@ -1299,5 +1481,9 @@ public class ABC {
         }
 
         createBodyIdxFromMethodIdxMap();
+    }
+    
+    public String toString() {
+    	return String.format("ABC programm version: %s.%s", major_version, minor_version);
     }
 }

@@ -73,8 +73,13 @@ public class DoABCTag extends Tag implements ABCContainerTag {
     public final void readData(SWFInputStream sis, ByteArrayRange data, int level, boolean parallel, boolean skipUnusualTags, boolean lazy) throws IOException {
         ABCInputStream ais = new ABCInputStream(sis.getBaseStream());
         // put it to the dumpview:
-        sis.readByteRangeEx(sis.available(), "abcBytes");
+        ais.dumpInfo = sis.dumpInfo;
+        //sis.readByteRangeEx(sis.available(), "abcBytes");
+        sis.skipBytesEx(sis.available());
+        
+        ais.newDumpLevel("abcBytes", "abc");
         abc = new ABC(ais, swf, this);
+        ais.endDumpLevel(abc);
     }
 
     /**

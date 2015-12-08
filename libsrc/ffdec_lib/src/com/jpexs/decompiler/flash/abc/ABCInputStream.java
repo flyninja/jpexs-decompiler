@@ -435,7 +435,7 @@ public class ABCInputStream implements AutoCloseable {
         return traits;
     }
 
-    private byte[] readBytesInternal(int count) throws IOException {
+    byte[] readBytesInternal(int count) throws IOException {
         byte[] ret = new byte[count];
         for (int i = 0; i < count; i++) {
             ret[i] = (byte) readInternal();
