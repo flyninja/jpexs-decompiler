@@ -32,6 +32,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ *
+ * @author JPEXS
+ */
 public class MethodInfo {
 
     @Internal
@@ -39,6 +43,7 @@ public class MethodInfo {
 
     public void delete(ABC abc, boolean d) {
         this.deleted = true;
+        MethodBody body = abc.findBody(this);
         if (body != null) {
             for (AVM2Instruction ins : body.getCode().code) {
                 if (ins.definition instanceof NewFunctionIns) {
@@ -78,8 +83,6 @@ public class MethodInfo {
     public ValueKind[] optional = new ValueKind[0];
 
     public int[] paramNames = new int[0];
-
-    private MethodBody body;
 
     public void setFlagIgnore_Rest() {
         flags |= FLAG_IGNORE_REST;
@@ -320,7 +323,7 @@ public class MethodInfo {
             pdata.declaredType = ptype;
             pdata.regIndex = i + 1;
             if (!localRegNames.isEmpty()) {
-                pdata.localName = localRegNames.get(i + 1); //assuming it is a slot                
+                pdata.localName = localRegNames.get(i + 1); //assuming it is a slot
                 writer.hilightSpecial(IdentifiersDeobfuscation.printIdentifier(true, localRegNames.get(i + 1)), HighlightSpecialType.PARAM_NAME, i, pdata);
             } else if ((paramNames.length > i) && (paramNames[i] != 0) && Configuration.paramNamesEnable.get()) {
                 pdata.localName = constants.getString(paramNames[i]);
@@ -378,13 +381,5 @@ public class MethodInfo {
             }
         }
         return writer.hilightSpecial(rname, HighlightSpecialType.RETURNS);
-    }
-
-    public void setBody(MethodBody body) {
-        this.body = body;
-    }
-
-    public MethodBody getBody() {
-        return body;
     }
 }

@@ -318,8 +318,6 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
 
     private static final Logger logger = Logger.getLogger(MainPanel.class.getName());
 
-    private Map<String, ASMSource> asms = new HashMap<>();
-
     public void setPercent(int percent) {
         progressBar.setValue(percent);
         progressBar.setVisible(true);
@@ -816,7 +814,6 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
         mainFrame.setTitle(ApplicationInfo.applicationVerName + (Configuration.displayFileName.get() ? " - " + swf.getFileTitle() : ""));
 
         List<ABCContainerTag> abcList = swf.getAbcList();
-        asms = swf.getASMs(true);
 
         boolean hasAbc = !abcList.isEmpty();
 
@@ -1608,6 +1605,7 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
             if (rawScriptName.startsWith("#PCODE ")) {
                 rawScriptName = rawScriptName.substring("#PCODE ".length());
             }
+            Map<String, ASMSource> asms = swf.getASMs(true);
             if (actionPanel != null && asms.containsKey(rawScriptName)) {
                 actionPanel.setSource(asms.get(rawScriptName), true);
             }
@@ -2137,10 +2135,8 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
                 updateClassesList();
             }
 
-            if (countAs2 == 0 && countAs3 == 0 && swf.isAS3()) {
-                View.showMessageDialog(this, translate("import.script.as12warning"));
-            } else {
-                View.showMessageDialog(this, translate("import.script.result").replace("%count%", Integer.toString(countAs2)));
+            View.showMessageDialog(this, translate("import.script.result").replace("%count%", Integer.toString(countAs2 + countAs3)));
+            if (countAs2 != 0 || countAs3 != 0) {
                 reload(true);
             }
         }
@@ -2490,7 +2486,7 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
                 final Font f = FontTag.installedFontsByName.get(fontName);
                 if (f == null || !f.canDisplay(character)) {
                     String msg = translate("error.font.nocharacter").replace("%char%", "" + character);
-                    logger.log(Level.SEVERE, msg + " FontId: " + font.getCharacterId() + " TextId: " + textTag.getCharacterId());
+                    logger.log(Level.SEVERE, "{0} FontId: {1} TextId: {2}", new Object[]{msg, font.getCharacterId(), textTag.getCharacterId()});
                     ignoreMissingCharacters = View.showConfirmDialog(null, msg, translate("error"),
                             JOptionPane.OK_CANCEL_OPTION, JOptionPane.ERROR_MESSAGE,
                             showAgainIgnoreMissingCharacters,
@@ -2619,12 +2615,21 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
         }
         if (item instanceof ShapeTag) {
             ShapeTag st = (ShapeTag) item;
-            File selectedFile = showImportFileChooser("filter.images|*.jpg;*.jpeg;*.gif;*.png;*.bmp");
+            String filter = "filter.images|*.jpg;*.jpeg;*.gif;*.png;*.bmp;*.svg";
+            File selectedFile = showImportFileChooser(filter);
             if (selectedFile != null) {
                 File selfile = Helper.fixDialogFile(selectedFile);
-                byte[] data = Helper.readFile(selfile.getAbsolutePath());
+                byte[] data = null;
+                String svgText = null;
+                if (".svg".equals(Path.getExtension(selfile))) {
+                    svgText = Helper.readTextFile(selfile.getAbsolutePath());
+                    showSvgImportWarning();
+                } else {
+                    data = Helper.readFile(selfile.getAbsolutePath());
+                }
                 try {
-                    Tag newTag = new ShapeImporter().importImage(st, data);
+                    ShapeImporter shapeImporter = new ShapeImporter();
+                    Tag newTag = svgText != null ? shapeImporter.importSvg(st, svgText) : shapeImporter.importImage(st, data);
                     SWF swf = st.getSwf();
                     if (newTag != null) {
                         refreshTree(swf);
@@ -2650,6 +2655,49 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
                 reload(true);
             }
         }
+    }
+
+    public void replaceNoFillButtonActionPerformed(ActionEvent evt) {
+        TreeItem item = tagTree.getCurrentTreeItem();
+        if (item == null) {
+            return;
+        }
+
+        if (item instanceof ShapeTag) {
+            ShapeTag st = (ShapeTag) item;
+            String filter = "filter.images|*.jpg;*.jpeg;*.gif;*.png;*.bmp;*.svg";
+            File selectedFile = showImportFileChooser(filter);
+            if (selectedFile != null) {
+                File selfile = Helper.fixDialogFile(selectedFile);
+                byte[] data = null;
+                String svgText = null;
+                if (".svg".equals(Path.getExtension(selfile))) {
+                    svgText = Helper.readTextFile(selfile.getAbsolutePath());
+                    showSvgImportWarning();
+                } else {
+                    data = Helper.readFile(selfile.getAbsolutePath());
+                }
+                try {
+                    ShapeImporter shapeImporter = new ShapeImporter();
+                    Tag newTag = svgText != null ? shapeImporter.importSvg(st, svgText, false) : shapeImporter.importImage(st, data, 0, false);
+                    SWF swf = st.getSwf();
+                    if (newTag != null) {
+                        refreshTree(swf);
+                        setTagTreeSelectedNode(newTag);
+                    }
+
+                    swf.clearImageCache();
+                } catch (IOException ex) {
+                    logger.log(Level.SEVERE, "Invalid image", ex);
+                    View.showMessageDialog(null, translate("error.image.invalid"), translate("error"), JOptionPane.ERROR_MESSAGE);
+                }
+                reload(true);
+            }
+        }
+    }
+
+    private void showSvgImportWarning() {
+        View.showMessageDialog(null, AppStrings.translate("message.warning.svgImportExperimental"), AppStrings.translate("message.warning"), JOptionPane.WARNING_MESSAGE, Configuration.warningSvgImport);
     }
 
     public void replaceAlphaButtonActionPerformed(ActionEvent evt) {
@@ -2744,7 +2792,19 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
 
                 @Override
                 public String getDescription() {
-                    return translate(filterName);
+                    StringBuilder extStr = new StringBuilder();
+                    boolean first = true;
+                    for (String ext : extensions) {
+                        if (first) {
+                            first = false;
+                        } else {
+                            extStr.append(",");
+                        }
+
+                        extStr.append("*").append(ext);
+                    }
+
+                    return translate(filterName).replace("%extensions%", extStr);
                 }
             };
             if (first) {

@@ -104,6 +104,10 @@ public class Configuration {
     @ConfigurationCategory("display")
     public static final ConfigurationItem<Boolean> internalFlashViewer = null;
 
+    @ConfigurationDefaultInt(1000)
+    @ConfigurationCategory("display")
+    public static final ConfigurationItem<Integer> setMovieDelay = null;
+
     @ConfigurationDefaultBoolean(false)
     @ConfigurationCategory("display")
     public static final ConfigurationItem<Boolean> dumpView = null;
@@ -528,6 +532,16 @@ public class Configuration {
     @ConfigurationDefaultBoolean(true)
     @ConfigurationCategory("script")
     public static final ConfigurationItem<Boolean> debugHalt = null;
+
+    @ConfigurationDefaultBoolean(true)
+    @ConfigurationName("warning.svgImport")
+    @ConfigurationCategory("import")
+    public static final ConfigurationItem<Boolean> warningSvgImport = null;
+
+    @ConfigurationDefaultBoolean(false)
+    @ConfigurationName("shapeImport.useNonSmoothedFill")
+    @ConfigurationCategory("import")
+    public static final ConfigurationItem<Boolean> shapeImportUseNonSmoothedFill = null;
 
     private enum OSId {
 

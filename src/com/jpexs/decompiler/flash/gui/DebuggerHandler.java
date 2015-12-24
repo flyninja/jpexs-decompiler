@@ -22,10 +22,12 @@ import com.jpexs.debugger.flash.Debugger;
 import com.jpexs.debugger.flash.DebuggerCommands;
 import com.jpexs.debugger.flash.DebuggerConnection;
 import com.jpexs.debugger.flash.Variable;
+import com.jpexs.debugger.flash.VariableType;
 import com.jpexs.debugger.flash.messages.in.InAskBreakpoints;
 import com.jpexs.debugger.flash.messages.in.InBreakAt;
 import com.jpexs.debugger.flash.messages.in.InBreakAtExt;
 import com.jpexs.debugger.flash.messages.in.InBreakReason;
+import com.jpexs.debugger.flash.messages.in.InConstantPool;
 import com.jpexs.debugger.flash.messages.in.InContinue;
 import com.jpexs.debugger.flash.messages.in.InFrame;
 import com.jpexs.debugger.flash.messages.in.InGetSwd;
@@ -106,6 +108,40 @@ public class DebuggerHandler implements DebugConnectionListener {
             return "-";
         }
         return breakScriptName;
+    }
+
+    public InGetVariable getVariable(long parentId, String varName, boolean children) {
+        try {
+            return commands.getVariable(parentId, varName, true, children);
+        } catch (IOException ex) {
+            return null;
+        }
+    }
+
+    public void setVariable(long parentId, String varName, int valueType, Object value) {
+        try {
+            String svalue = "";
+            switch (valueType) {
+                case VariableType.STRING:
+                    svalue = "" + value;
+                    break;
+                case VariableType.NUMBER:
+                    svalue = "" + value;
+                    break;
+                case VariableType.BOOLEAN:
+                    svalue = ((Boolean) value) ? "true" : "false";
+                    break;
+                case VariableType.UNDEFINED:
+                    svalue = "undefined";
+                    break;
+                case VariableType.NULL:
+                    svalue = "undefined";
+                    break;
+            }
+            commands.setVariable(parentId, varName, valueType, svalue);
+        } catch (IOException ex) {
+            //ignore
+        }
     }
 
     public synchronized void removeBreakPoint(String scriptName, int line) {
@@ -257,6 +293,7 @@ public class DebuggerHandler implements DebugConnectionListener {
     }
 
     private InFrame frame;
+    private InConstantPool pool;
 
     private InBreakAtExt breakInfo;
 
@@ -332,6 +369,18 @@ public class DebuggerHandler implements DebugConnectionListener {
         clisteners.remove(l);
     }
 
+    public synchronized void refreshFrame() {
+        if (!paused) {
+            return;
+        }
+        try {
+            frame = commands.getFrame(0);
+            pool = commands.getConstantPool(0);
+        } catch (IOException ex) {
+            //ignore
+        }
+    }
+
     public synchronized InFrame getFrame() {
         if (!paused) {
             return null;
@@ -361,6 +410,7 @@ public class DebuggerHandler implements DebugConnectionListener {
 
     public void disconnect() {
         frame = null;
+        pool = null;
         breakInfo = null;
         breakReason = null;
         connected = false;
@@ -613,6 +663,7 @@ public class DebuggerHandler implements DebugConnectionListener {
                             Main.startWork(AppStrings.translate("work.breakat") + newBreakScriptName + ":" + message.line + " " + AppStrings.translate("debug.break.reason." + reason), null);
                         }
                         frame = commands.getFrame(0);
+                        pool = commands.getConstantPool(0);
 
                         for (BreakListener l : breakListeners) {
                             l.breakAt(newBreakScriptName, message.line,
@@ -707,5 +758,12 @@ public class DebuggerHandler implements DebugConnectionListener {
         }
         Logger.getLogger(DebuggerHandler.class.getName()).log(Level.FINEST, "sending bps finished");
 
+    }
+
+    public synchronized InConstantPool getConstantPool() {
+        if (!paused) {
+            return null;
+        }
+        return pool;
     }
 }

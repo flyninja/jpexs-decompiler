@@ -83,7 +83,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -517,6 +516,10 @@ public class Main {
             loadFromMemoryFrame = new LoadFromMemoryFrame(mainFrame);
         }
         loadFromMemoryFrame.setVisible(true);
+    }
+
+    public static void setVariable(long parentId, String varName, int valueType, Object value) {
+        getDebugHandler().setVariable(parentId, varName, valueType, value);
     }
 
     public static void setSubLimiter(boolean value) {
@@ -1394,7 +1397,9 @@ public class Main {
 
                 @Override
                 public void disconnected() {
-                    Main.mainFrame.getPanel().refreshBreakPoints();
+                    if (Main.mainFrame != null && Main.mainFrame.getPanel() != null) {
+                        Main.mainFrame.getPanel().refreshBreakPoints();
+                    }
                 }
             });
             flashDebugger.addConnectionListener(debugHandler);
@@ -1661,6 +1666,7 @@ public class Main {
     }
 
     private static void reloadLastSession() {
+        boolean openingFiles = false;
         if (Configuration.saveSessionOnExit.get()) {
             String lastSession = Configuration.lastSessionFiles.get();
             if (lastSession != null && lastSession.length() > 0) {
@@ -1688,17 +1694,16 @@ public class Main {
                     sourceInfos[i] = new SWFSourceInfo(null, exfiles.get(i), extitle == null || extitle.isEmpty() ? null : extitle);
                 }
                 if (sourceInfos.length > 0) {
+                    openingFiles = true;
                     openFile(sourceInfos, () -> {
                         mainFrame.getPanel().tagTree.setSelectionPathString(Configuration.lastSessionSelection.get());
                         setSessionLoaded(true);
                     });
-                } else {
-                    setSessionLoaded(true);
                 }
-            } else {
-                setSessionLoaded(true);
             }
-        } else {
+        }
+
+        if (!openingFiles) {
             setSessionLoaded(true);
         }
     }
