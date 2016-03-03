@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,7 +37,7 @@ public class NameValuePair extends AVM2Item {
 
     @Override
     public GraphTextWriter appendTo(GraphTextWriter writer, LocalData localData) throws InterruptedException {
-        name.toString(writer, localData);
+        name.toStringString(writer, localData);
         writer.append(":");
         if (value instanceof TernarOpItem) { //Ternar operator contains ":"
             writer.append("(");

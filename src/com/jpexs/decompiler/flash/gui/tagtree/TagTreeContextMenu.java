@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS
+ *  Copyright (C) 2010-2016 JPEXS
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -285,11 +285,9 @@ public class TagTreeContextMenu extends JPopupMenu {
             }
             if (singleSwf == null) {
                 singleSwf = item.getSwf();
-            } else {
-                if (singleSwf != item.getSwf()) {
-                    allSelectedIsInTheSameSwf = false;
-                    break;
-                }
+            } else if (singleSwf != item.getSwf()) {
+                allSelectedIsInTheSameSwf = false;
+                break;
             }
         }
 
@@ -312,6 +310,21 @@ public class TagTreeContextMenu extends JPopupMenu {
         copyTagMenu.setVisible(false);
         copyTagWithDependenciesMenu.setVisible(false);
         openSWFInsideTagMenuItem.setVisible(false);
+
+        if (allSelectedIsTag) {
+            boolean canUndo = false;
+            for (TreeItem item : items) {
+                if (item instanceof Tag) {
+                    Tag tag = (Tag) item;
+                    if (tag.canUndo()) {
+                        canUndo = true;
+                        break;
+                    }
+                }
+            }
+
+            undoTagMenuItem.setEnabled(canUndo);
+        }
 
         boolean singleSelect = items.size() == 1;
 
@@ -427,6 +440,25 @@ public class TagTreeContextMenu extends JPopupMenu {
 
             openSWFInsideTagMenuItem.setVisible(anyInnerSwf);
         }
+
+        for (TreeItem item : items) {
+            if (item instanceof Tag) {
+                if (((Tag) item).isReadOnly()) {
+                    removeMenuItem.setVisible(false);
+                    removeWithDependenciesMenuItem.setVisible(false);
+                    undoTagMenuItem.setVisible(false);
+                    replaceMenuItem.setVisible(false);
+                    replaceNoFillMenuItem.setVisible(false);
+                    replaceWithTagMenuItem.setVisible(false);
+                    rawEditMenuItem.setVisible(false);
+                    jumpToCharacterMenuItem.setVisible(false);
+                    importSwfXmlMenuItem.setVisible(false);
+                    addTagMenu.setVisible(false);
+                    moveTagMenu.setVisible(false);
+                    openSWFInsideTagMenuItem.setVisible(false);
+                }
+            }
+        }
     }
 
     private void addAddTagMenuItems(List<Integer> allowedTagTypes, JMenu addTagMenu, TreeItem item) {
@@ -478,9 +510,9 @@ public class TagTreeContextMenu extends JPopupMenu {
         SWF sourceSwf = items.get(0).getSwf();
         for (TreeItem item : items) {
             Tag tag = (Tag) item;
-            sourceSwf.tags.remove(tag);
+            sourceSwf.removeTag(tag);
             tag.setSwf(targetSwf, true);
-            targetSwf.tags.add(tag);
+            targetSwf.addTag(tag);
             chechUniqueCharacterId(tag);
             targetSwf.updateCharacters();
             tag.setModified(true);
@@ -505,7 +537,7 @@ public class TagTreeContextMenu extends JPopupMenu {
                 Tag tag = (Tag) item;
                 Tag copyTag = tag.cloneTag();
                 copyTag.setSwf(targetSwf, true);
-                targetSwf.tags.add(copyTag);
+                targetSwf.addTag(copyTag);
                 chechUniqueCharacterId(copyTag);
                 targetSwf.updateCharacters();
                 copyTag.setModified(true);
@@ -546,7 +578,7 @@ public class TagTreeContextMenu extends JPopupMenu {
                     if (!copiedTags.contains(neededTag)) {
                         copyTag = neededTag.cloneTag();
                         copyTag.setSwf(targetSwf, true);
-                        targetSwf.tags.add(copyTag);
+                        targetSwf.addTag(copyTag);
                         int oldCharacterId = neededTag.getCharacterId();
                         int newCharacterId = chechUniqueCharacterId(copyTag);
                         changedCharacterIds.put(oldCharacterId, newCharacterId);
@@ -561,7 +593,7 @@ public class TagTreeContextMenu extends JPopupMenu {
 
                 copyTag = tag.cloneTag();
                 copyTag.setSwf(targetSwf, true);
-                targetSwf.tags.add(copyTag);
+                targetSwf.addTag(copyTag);
                 if (tag instanceof CharacterTag) {
                     CharacterTag characterTag = (CharacterTag) copyTag;
                     int oldCharacterId = characterTag.getCharacterId();

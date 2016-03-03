@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,9 +16,14 @@
  */
 package com.jpexs.decompiler.graph.model;
 
+import com.jpexs.decompiler.flash.SourceGeneratorLocalData;
 import com.jpexs.decompiler.flash.helpers.GraphTextWriter;
+import com.jpexs.decompiler.graph.CompilationException;
 import com.jpexs.decompiler.graph.GraphSourceItem;
 import com.jpexs.decompiler.graph.GraphTargetItem;
+import com.jpexs.decompiler.graph.SourceGenerator;
+import com.jpexs.decompiler.graph.TypeItem;
+import java.util.List;
 
 /**
  *
@@ -34,19 +39,24 @@ public class PushItem extends GraphTargetItem {
     public GraphTextWriter appendTo(GraphTextWriter writer, LocalData localData) throws InterruptedException {
         //Logger.getLogger(PushItem.class.getName()).log(Level.WARNING, "Push item left in the source code");
         writer.append("§§push(");
-        value.appendTo(writer, localData);
+        value.appendTry(writer, localData);
         writer.append(")");
         return writer;
     }
 
     @Override
     public boolean hasReturnValue() {
-        return true;
+        return false;
+    }
+
+    @Override
+    public List<GraphSourceItem> toSource(SourceGeneratorLocalData localData, SourceGenerator generator) throws CompilationException {
+        return generator.generate(localData, this);
     }
 
     @Override
     public GraphTargetItem returnType() {
-        return value.returnType();
+        return TypeItem.UNBOUNDED;
     }
 
     @Override

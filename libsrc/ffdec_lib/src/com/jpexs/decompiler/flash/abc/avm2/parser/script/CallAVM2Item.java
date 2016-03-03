@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -45,6 +45,7 @@ public class CallAVM2Item extends AVM2Item {
     public List<GraphTargetItem> arguments;
 
     public int line;
+
     public List<NamespaceItem> openedNamespaces;
 
     public CallAVM2Item(List<NamespaceItem> openedNamespaces, int line, GraphTargetItem name, List<GraphTargetItem> arguments) {

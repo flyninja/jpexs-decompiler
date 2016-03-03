@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -86,7 +86,7 @@ public class TryActionItem extends ActionItem implements Block {
             List<GraphTargetItem> commands = catchCommands.get(e);
             appendBlock(null, writer, localData, commands);
         }
-        if (finallyCommands.size() > 0) {
+        if (catchExceptions.isEmpty() || finallyCommands.size() > 0) {
             writer.newLine();
             writer.append("finally");
             appendBlock(null, writer, localData, finallyCommands);

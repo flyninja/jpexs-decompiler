@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -33,7 +33,7 @@ import java.util.List;
 public class URShiftActionItem extends BinaryOpItem {
 
     public URShiftActionItem(GraphSourceItem instruction, GraphSourceItem lineStartIns, GraphTargetItem leftSide, GraphTargetItem rightSide) {
-        super(instruction, lineStartIns, PRECEDENCE_BITWISESHIFT, leftSide, rightSide, ">>>");
+        super(instruction, lineStartIns, PRECEDENCE_BITWISESHIFT, leftSide, rightSide, ">>>", "Number", "Number");
     }
 
     @Override

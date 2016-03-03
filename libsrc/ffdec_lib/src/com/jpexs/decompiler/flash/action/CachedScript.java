@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -29,8 +29,11 @@ public class CachedScript implements Serializable {
     public String text;
 
     public List<Highlighting> hilights;
+
     public List<Highlighting> methodHilights;
+
     public List<Highlighting> classHilights;
+
     public List<Highlighting> specialHilights;
 
     public CachedScript(String text, List<Highlighting> hilights, List<Highlighting> methodHilights, List<Highlighting> classHilights, List<Highlighting> specialHilights) {

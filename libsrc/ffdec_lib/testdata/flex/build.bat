@@ -5,9 +5,9 @@ goto block2
 :blockset
 set ISDEBUG=true
 :block2
-set COMPILERPATH=mxmlc.exe
-if not exist %COMPILERPATH% goto notex
-%COMPILERPATH% -warnings=false -debug=%ISDEBUG% TestFlex.as>out.txt
+set COMPILERPATH=%2
+rem if not exist %COMPILERPATH% goto notex
+%COMPILERPATH% -warnings=false -debug=%ISDEBUG% -static-link-runtime-shared-libraries TestFlex.as>out.txt
 start notepad out.txt
 if errorlevel==1 goto failed
 goto end

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,6 +16,7 @@
  */
 package com.jpexs.decompiler.flash.tags;
 
+import com.jpexs.decompiler.flash.ReadOnlyTagList;
 import com.jpexs.decompiler.flash.SWF;
 import com.jpexs.decompiler.flash.SWFInputStream;
 import com.jpexs.decompiler.flash.SWFOutputStream;
@@ -33,6 +34,8 @@ import com.jpexs.decompiler.flash.types.BasicType;
 import com.jpexs.decompiler.flash.types.ColorTransform;
 import com.jpexs.decompiler.flash.types.MATRIX;
 import com.jpexs.decompiler.flash.types.RECT;
+import com.jpexs.decompiler.flash.types.annotations.Internal;
+import com.jpexs.decompiler.flash.types.annotations.SWFField;
 import com.jpexs.decompiler.flash.types.annotations.SWFType;
 import com.jpexs.decompiler.flash.types.annotations.SWFVersion;
 import com.jpexs.helpers.ByteArrayRange;
@@ -74,7 +77,11 @@ public class DefineSpriteTag extends CharacterTag implements DrawableTag, Timeli
     /**
      * A series of tags
      */
-    public List<Tag> subTags;
+    @SWFField
+    private List<Tag> subTags;
+
+    @Internal
+    public ReadOnlyTagList readOnlyTags;
 
     public boolean hasEndTag;
 
@@ -121,6 +128,7 @@ public class DefineSpriteTag extends CharacterTag implements DrawableTag, Timeli
             subTags.remove(subTags.size() - 1);
         }
         this.subTags = subTags;
+        readOnlyTags = null;
     }
 
     /**
@@ -133,7 +141,7 @@ public class DefineSpriteTag extends CharacterTag implements DrawableTag, Timeli
     public void getData(SWFOutputStream sos) throws IOException {
         sos.writeUI16(spriteId);
         sos.writeUI16(frameCount);
-        sos.writeTags(subTags);
+        sos.writeTags(getTags());
         if (hasEndTag) {
             sos.writeUI16(0);
         }
@@ -142,7 +150,7 @@ public class DefineSpriteTag extends CharacterTag implements DrawableTag, Timeli
     @Override
     public Timeline getTimeline() {
         if (timeline == null) {
-            timeline = new Timeline(swf, this, subTags, spriteId, getRect());
+            timeline = new Timeline(swf, this, spriteId, getRect());
         }
         return timeline;
     }
@@ -150,7 +158,7 @@ public class DefineSpriteTag extends CharacterTag implements DrawableTag, Timeli
     @Override
     public void resetTimeline() {
         if (timeline != null) {
-            timeline.reset(swf, this, subTags, spriteId, getRect());
+            timeline.reset(swf, this, spriteId, getRect());
         }
     }
 
@@ -208,7 +216,7 @@ public class DefineSpriteTag extends CharacterTag implements DrawableTag, Timeli
         ret = new RECT(Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.MIN_VALUE);
         HashMap<Integer, Integer> depthMap = new HashMap<>();
         boolean foundSomething = false;
-        for (Tag t : subTags) {
+        for (Tag t : getTags()) {
             MATRIX m = null;
             int characterId = -1;
             if (t instanceof PlaceObjectTypeTag) {
@@ -268,14 +276,10 @@ public class DefineSpriteTag extends CharacterTag implements DrawableTag, Timeli
         return ret;
     }
 
-    public List<Tag> getSubTags() {
-        return subTags;
-    }
-
     @Override
     public void setModified(boolean value) {
         if (!value) {
-            for (Tag subTag : subTags) {
+            for (Tag subTag : getTags()) {
                 subTag.setModified(false);
             }
         }
@@ -284,16 +288,49 @@ public class DefineSpriteTag extends CharacterTag implements DrawableTag, Timeli
     }
 
     @Override
+    public ReadOnlyTagList getTags() {
+        if (readOnlyTags == null) {
+            readOnlyTags = new ReadOnlyTagList(subTags);
+        }
+
+        return readOnlyTags;
+    }
+
+    @Override
+    public void removeTag(int index) {
+        setModified(true);
+        subTags.remove(index);
+    }
+
+    @Override
+    public void removeTag(Tag tag) {
+        setModified(true);
+        subTags.remove(tag);
+    }
+
+    @Override
+    public void addTag(Tag tag) {
+        setModified(true);
+        subTags.add(tag);
+    }
+
+    @Override
+    public void addTag(int index, Tag tag) {
+        setModified(true);
+        subTags.add(index, tag);
+    }
+
+    @Override
     public void createOriginalData() {
         super.createOriginalData();
-        for (Tag subTag : subTags) {
+        for (Tag subTag : getTags()) {
             subTag.createOriginalData();
         }
     }
 
     @Override
     public void getNeededCharacters(Set<Integer> needed) {
-        for (Tag t : subTags) {
+        for (Tag t : getTags()) {
             if (t instanceof CharacterIdTag) {
                 needed.add(((CharacterIdTag) t).getCharacterId());
             }
@@ -324,18 +361,18 @@ public class DefineSpriteTag extends CharacterTag implements DrawableTag, Timeli
     }
 
     @Override
-    public Shape getOutline(int frame, int time, int ratio, RenderContext renderContext, Matrix transformation) {
-        return getTimeline().getOutline(frame, time, ratio, renderContext, transformation);
+    public Shape getOutline(int frame, int time, int ratio, RenderContext renderContext, Matrix transformation, boolean stroked) {
+        return getTimeline().getOutline(frame, time, renderContext, transformation, stroked);
     }
 
     @Override
-    public void toImage(int frame, int time, int ratio, RenderContext renderContext, SerializableImage image, Matrix transformation, ColorTransform colorTransform) {
-        SWF.frameToImage(getTimeline(), frame, time, renderContext, image, transformation, colorTransform);
+    public void toImage(int frame, int time, int ratio, RenderContext renderContext, SerializableImage image, boolean isClip, Matrix transformation, Matrix strokeTransformation, Matrix absoluteTransformation, ColorTransform colorTransform) {
+        getTimeline().toImage(frame, time, renderContext, image, isClip, transformation, strokeTransformation, absoluteTransformation, colorTransform);
     }
 
     @Override
     public void toSVG(SVGExporter exporter, int ratio, ColorTransform colorTransform, int level, double zoom) throws IOException {
-        SWF.frameToSvg(getTimeline(), 0, 0, null, 0, exporter, colorTransform, level + 1, zoom);
+        getTimeline().toSVG(0, 0, null, 0, exporter, colorTransform, level + 1, zoom);
     }
 
     @Override
@@ -374,11 +411,15 @@ public class DefineSpriteTag extends CharacterTag implements DrawableTag, Timeli
         if (super.isModified()) {
             return true;
         }
-        for (Tag t : subTags) {
+        for (Tag t : getTags()) {
             if (t.isModified()) {
                 return true;
             }
         }
         return false;
+    }
+
+    public void clearReadOnlyListCache() {
+        readOnlyTags = null;
     }
 }

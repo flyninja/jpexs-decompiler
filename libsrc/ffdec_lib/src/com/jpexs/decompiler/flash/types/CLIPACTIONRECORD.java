@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,6 +27,7 @@ import com.jpexs.decompiler.flash.helpers.GraphTextWriter;
 import com.jpexs.decompiler.flash.tags.Tag;
 import com.jpexs.decompiler.flash.tags.base.ASMSource;
 import com.jpexs.decompiler.flash.types.annotations.Conditional;
+import com.jpexs.decompiler.flash.types.annotations.HideInRawEdit;
 import com.jpexs.decompiler.flash.types.annotations.Internal;
 import com.jpexs.helpers.ByteArrayRange;
 import com.jpexs.helpers.Helper;
@@ -146,8 +147,7 @@ public class CLIPACTIONRECORD implements ASMSource, Serializable {
     /**
      * Actions to perform
      */
-    //public List<Action> actions;
-    @Internal
+    @HideInRawEdit
     public ByteArrayRange actionBytes;
 
     /**

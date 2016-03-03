@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -359,7 +359,11 @@ public class DefineEditTextTag extends TextTag {
     private List<CharacterWithStyle> getTextWithStyle() {
         String str = "";
         TextStyle style = new TextStyle();
-        style.font = swf.getFont(fontId);
+        if (fontClass != null) {
+            style.font = swf.getFontByClass(fontClass);
+        } else {
+            style.font = swf.getFont(fontId);
+        }
         style.fontHeight = fontHeight;
         style.fontLeading = leading;
         if (hasTextColor) {
@@ -497,7 +501,7 @@ public class DefineEditTextTag extends TextTag {
     }
 
     @Override
-    public HighlightedText getFormattedText() {
+    public HighlightedText getFormattedText(boolean ignoreLetterSpacing) {
         HighlightedTextWriter writer = new HighlightedTextWriter(Configuration.getCodeFormatting(), true);
         writer.append("[");
         String[] alignNames = {"left", "right", "center", "justify"};
@@ -912,7 +916,7 @@ public class DefineEditTextTag extends TextTag {
     }
 
     @Override
-    public void toImage(int frame, int time, int ratio, RenderContext renderContext, SerializableImage image, Matrix transformation, ColorTransform colorTransform) {
+    public void toImage(int frame, int time, int ratio, RenderContext renderContext, SerializableImage image, boolean isClip, Matrix transformation, Matrix strokeTransformation, Matrix absoluteTransformation, ColorTransform colorTransform) {
         render(TextRenderMode.BITMAP, image, null, null, transformation, colorTransform, 1);
     }
 
@@ -923,7 +927,7 @@ public class DefineEditTextTag extends TextTag {
 
     @Override
     public void toHtmlCanvas(StringBuilder result, double unitDivisor) {
-        render(TextRenderMode.HTML5_CANVAS, null, null, result, new Matrix(), new ColorTransform(), unitDivisor);
+        render(TextRenderMode.HTML5_CANVAS, null, null, result, new Matrix(), null, unitDivisor);
     }
 
     private void render(TextRenderMode renderMode, SerializableImage image, SVGExporter svgExporter, StringBuilder htmlCanvasBuilder, Matrix transformation, ColorTransform colorTransform, double zoom) {
@@ -991,10 +995,8 @@ public class DefineEditTextTag extends TextTag {
                     if (Character.isWhitespace(c)) {
                         lastWasWhiteSpace = true;
                     }
-                } else {
-                    if (multiline) {
-                        textModel.newParagraph();
-                    }
+                } else if (multiline) {
+                    textModel.newParagraph();
                 }
                 prevChar = c;
             }
@@ -1096,8 +1098,15 @@ public class DefineEditTextTag extends TextTag {
                 }
                 for (SameStyleTextRecord tr : line) {
                     TEXTRECORD tr2 = new TEXTRECORD();
-                    tr2.styleFlagsHasFont = fontId != 0;
-                    tr2.fontId = fontId;
+                    int fid = fontId;
+                    if (fontClass != null) {
+                        FontTag ft = swf.getFontByClass(fontClass);
+                        if (ft != null) {
+                            fid = ft.getFontId();
+                        }
+                    }
+                    tr2.styleFlagsHasFont = fid != 0;
+                    tr2.fontId = fid;
                     tr2.textHeight = tr.style.fontHeight;
                     if (tr.style.textColor != null) {
                         tr2.styleFlagsHasColor = true;

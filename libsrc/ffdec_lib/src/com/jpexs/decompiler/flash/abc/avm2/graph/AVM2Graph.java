@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,14 +22,11 @@ import com.jpexs.decompiler.flash.abc.ABC;
 import com.jpexs.decompiler.flash.abc.AVM2LocalData;
 import com.jpexs.decompiler.flash.abc.avm2.AVM2Code;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.AVM2Instruction;
-import com.jpexs.decompiler.flash.abc.avm2.instructions.jumps.IfStrictEqIns;
-import com.jpexs.decompiler.flash.abc.avm2.instructions.jumps.IfStrictNeIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.jumps.JumpIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.jumps.LookupSwitchIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.localregs.GetLocalTypeIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.localregs.KillIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.other.ReturnValueIns;
-import com.jpexs.decompiler.flash.abc.avm2.instructions.stack.PushIntegerTypeIns;
 import com.jpexs.decompiler.flash.abc.avm2.model.AVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.FilteredCheckAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.HasNextAVM2Item;
@@ -38,7 +35,6 @@ import com.jpexs.decompiler.flash.abc.avm2.model.IntegerValueAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.LocalRegAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.NextNameAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.NextValueAVM2Item;
-import com.jpexs.decompiler.flash.abc.avm2.model.NullAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.ReturnValueAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.ReturnVoidAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.SetLocalAVM2Item;
@@ -51,20 +47,16 @@ import com.jpexs.decompiler.flash.abc.avm2.model.clauses.FilterAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.clauses.ForEachInAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.clauses.ForInAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.clauses.TryAVM2Item;
-import com.jpexs.decompiler.flash.abc.avm2.model.operations.StrictEqAVM2Item;
-import com.jpexs.decompiler.flash.abc.avm2.model.operations.StrictNeqAVM2Item;
 import com.jpexs.decompiler.flash.abc.types.ABCException;
 import com.jpexs.decompiler.flash.abc.types.MethodBody;
 import com.jpexs.decompiler.graph.DottedChain;
 import com.jpexs.decompiler.graph.Graph;
 import com.jpexs.decompiler.graph.GraphPart;
-import com.jpexs.decompiler.graph.GraphPartMulti;
 import com.jpexs.decompiler.graph.GraphSource;
 import com.jpexs.decompiler.graph.GraphTargetItem;
 import com.jpexs.decompiler.graph.Loop;
 import com.jpexs.decompiler.graph.ScopeStack;
 import com.jpexs.decompiler.graph.TranslateStack;
-import com.jpexs.decompiler.graph.model.BreakItem;
 import com.jpexs.decompiler.graph.model.ExitItem;
 import com.jpexs.decompiler.graph.model.IfItem;
 import com.jpexs.decompiler.graph.model.LoopItem;
@@ -113,10 +105,11 @@ public class AVM2Graph extends Graph {
 
     }
 
-    public static List<GraphTargetItem> translateViaGraph(String path, AVM2Code code, ABC abc, MethodBody body, boolean isStatic, int scriptIndex, int classIndex, HashMap<Integer, GraphTargetItem> localRegs, ScopeStack scopeStack, HashMap<Integer, String> localRegNames, List<DottedChain> fullyQualifiedNames, int staticOperation, HashMap<Integer, Integer> localRegAssigmentIps, HashMap<Integer, List<Integer>> refs) throws InterruptedException {
+    public static List<GraphTargetItem> translateViaGraph(String path, AVM2Code code, ABC abc, MethodBody body, boolean isStatic, int scriptIndex, int classIndex, HashMap<Integer, GraphTargetItem> localRegs, ScopeStack scopeStack, HashMap<Integer, String> localRegNames, List<DottedChain> fullyQualifiedNames, int staticOperation, HashMap<Integer, Integer> localRegAssigmentIps, HashMap<Integer, List<Integer>> refs, boolean thisHasDefaultToPrimitive) throws InterruptedException {
         AVM2Graph g = new AVM2Graph(code, abc, body, isStatic, scriptIndex, classIndex, localRegs, scopeStack, localRegNames, fullyQualifiedNames, localRegAssigmentIps, refs);
 
         AVM2LocalData localData = new AVM2LocalData();
+        localData.thisHasDefaultToPrimitive = thisHasDefaultToPrimitive;
         localData.isStatic = isStatic;
         localData.classIndex = classIndex;
         localData.localRegs = localRegs;
@@ -529,8 +522,8 @@ public class AVM2Graph extends Graph {
 
             if ((!w.expression.isEmpty()) && (w.expression.get(w.expression.size() - 1) instanceof HasNextAVM2Item)) {
                 HasNextAVM2Item hn = (HasNextAVM2Item) w.expression.get(w.expression.size() - 1);
-                if (((HasNextAVM2Item) w.expression.get(w.expression.size() - 1)).collection != null) {
-                    if (((HasNextAVM2Item) w.expression.get(w.expression.size() - 1)).collection.getNotCoerced().getThroughRegister() instanceof FilteredCheckAVM2Item) {
+                if (((HasNextAVM2Item) w.expression.get(w.expression.size() - 1)).obj != null) {
+                    if (((HasNextAVM2Item) w.expression.get(w.expression.size() - 1)).obj.getNotCoerced().getThroughRegister() instanceof FilteredCheckAVM2Item) {
                         if (w.commands.size() >= 3) {
                             int pos = 0;
                             while (w.commands.get(pos) instanceof SetLocalAVM2Item) {
@@ -553,7 +546,7 @@ public class AVM2Graph extends Graph {
                                                 int regIndex = ((LocalRegAVM2Item) spt.object).regIndex;
                                                 HasNextAVM2Item iti = (HasNextAVM2Item) w.expression.get(w.expression.size() - 1);
                                                 HashMap<Integer, GraphTargetItem> localRegs = aLocalData.localRegs;
-                                                localRegs.put(regIndex, new FilterAVM2Item(null, null, iti.collection.getThroughRegister(), ift.expression));
+                                                localRegs.put(regIndex, new FilterAVM2Item(null, null, iti.obj.getThroughRegister(), ift.expression));
                                                 return null;
                                             }
                                         }
@@ -566,9 +559,9 @@ public class AVM2Graph extends Graph {
                             SetTypeAVM2Item sti = (SetTypeAVM2Item) w.commands.remove(0);
                             GraphTargetItem gti = sti.getValue().getNotCoerced();
                             if (gti instanceof NextValueAVM2Item) {
-                                return new ForEachInAVM2Item(w.getSrc(), w.getLineStartItem(), w.loop, new InAVM2Item(hn.getInstruction(), hn.getLineStartIns(), sti.getObject(), ((HasNextAVM2Item) w.expression.get(w.expression.size() - 1)).collection), w.commands);
+                                return new ForEachInAVM2Item(w.getSrc(), w.getLineStartItem(), w.loop, new InAVM2Item(hn.getInstruction(), hn.getLineStartIns(), sti.getObject(), ((HasNextAVM2Item) w.expression.get(w.expression.size() - 1)).obj), w.commands);
                             } else if (gti instanceof NextNameAVM2Item) {
-                                return new ForInAVM2Item(w.getSrc(), w.getLineStartItem(), w.loop, new InAVM2Item(hn.getInstruction(), hn.getLineStartIns(), sti.getObject(), ((HasNextAVM2Item) w.expression.get(w.expression.size() - 1)).collection), w.commands);
+                                return new ForInAVM2Item(w.getSrc(), w.getLineStartItem(), w.loop, new InAVM2Item(hn.getInstruction(), hn.getLineStartIns(), sti.getObject(), ((HasNextAVM2Item) w.expression.get(w.expression.size() - 1)).obj), w.commands);
                             }
                         }
                     }
@@ -695,9 +688,9 @@ public class AVM2Graph extends Graph {
                             GraphTargetItem repl = null;
 
                             if (gti instanceof NextValueAVM2Item) {
-                                repl = new ForEachInAVM2Item(ifi.getSrc(), ifi.getLineStartItem(), new Loop(0, null, null), new InAVM2Item(null, null, sti.getObject(), hnt.collection), body);
+                                repl = new ForEachInAVM2Item(ifi.getSrc(), ifi.getLineStartItem(), new Loop(0, null, null), new InAVM2Item(null, null, sti.getObject(), hnt.obj), body);
                             } else if (gti instanceof NextNameAVM2Item) {
-                                repl = new ForInAVM2Item(ifi.getSrc(), ifi.getLineStartItem(), new Loop(0, null, null), new InAVM2Item(null, null, sti.getObject(), hnt.collection), body);
+                                repl = new ForInAVM2Item(ifi.getSrc(), ifi.getLineStartItem(), new Loop(0, null, null), new InAVM2Item(null, null, sti.getObject(), hnt.obj), body);
                             }
                             if (repl != null) {
                                 list.remove(i);
@@ -743,5 +736,4 @@ public class AVM2Graph extends Graph {
     protected List<GraphTargetItem> filter(List<GraphTargetItem> list) {
         return avm2code.clearTemporaryRegisters(list);
     }
-
 }

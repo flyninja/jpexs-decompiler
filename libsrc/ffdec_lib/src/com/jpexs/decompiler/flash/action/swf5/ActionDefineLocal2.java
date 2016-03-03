@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,10 @@ package com.jpexs.decompiler.flash.action.swf5;
 
 import com.jpexs.decompiler.flash.BaseLocalData;
 import com.jpexs.decompiler.flash.action.Action;
+import com.jpexs.decompiler.flash.action.LocalDataArea;
 import com.jpexs.decompiler.flash.action.model.DefineLocalActionItem;
+import com.jpexs.decompiler.flash.ecma.EcmaScript;
+import com.jpexs.decompiler.flash.ecma.Undefined;
 import com.jpexs.decompiler.flash.types.annotations.SWFVersion;
 import com.jpexs.decompiler.graph.GraphSourceItem;
 import com.jpexs.decompiler.graph.GraphTargetItem;
@@ -51,5 +54,15 @@ public class ActionDefineLocal2 extends Action {
     @Override
     public int getStackPopCount(BaseLocalData localData, TranslateStack stack) {
         return 1;
+    }
+
+    @Override
+    public boolean execute(LocalDataArea lda) {
+        if (lda.stack.size() < 1) {
+            return false;
+        }
+
+        lda.localVariables.put(EcmaScript.toString(lda.pop()), Undefined.INSTANCE);
+        return true;
     }
 }

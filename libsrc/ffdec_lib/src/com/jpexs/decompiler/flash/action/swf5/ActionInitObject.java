@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,6 +18,8 @@ package com.jpexs.decompiler.flash.action.swf5;
 
 import com.jpexs.decompiler.flash.BaseLocalData;
 import com.jpexs.decompiler.flash.action.Action;
+import com.jpexs.decompiler.flash.action.ActionScriptObject;
+import com.jpexs.decompiler.flash.action.LocalDataArea;
 import com.jpexs.decompiler.flash.action.model.InitObjectActionItem;
 import com.jpexs.decompiler.flash.types.annotations.SWFVersion;
 import com.jpexs.decompiler.graph.GraphSourceItem;
@@ -41,6 +43,25 @@ public class ActionInitObject extends Action {
     @Override
     public String toString() {
         return "InitObject";
+    }
+
+    @Override
+    public boolean execute(LocalDataArea lda) {
+        if (lda.stack.isEmpty()) {
+            return false;
+        }
+        int num = (int) (double) (Double) lda.popAsNumber();
+        if (lda.stack.size() < 2 * num) {
+            return false;
+        }
+        ActionScriptObject obj = new ActionScriptObject();
+        for (int i = 0; i < num; i++) {
+            Object val = lda.pop();
+            String name = lda.popAsString();
+            obj.setMember(name, val);
+        }
+        lda.stack.push(obj);
+        return true;
     }
 
     @Override

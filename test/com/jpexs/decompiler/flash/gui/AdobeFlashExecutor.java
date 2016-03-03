@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS
+ *  Copyright (C) 2010-2016 JPEXS
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -152,7 +152,6 @@ public class AdobeFlashExecutor {
 
             Map<String, ASMSource> asms = swf.getASMs(true);
             ASMSource asm = asms.get("\\frame_1\\DoAction");
-            int asmIndex = swf.tags.indexOf(asm);
 
             ActionList actionsList = asm.getActions();
             FastActionList actions = new FastActionList(actionsList);
@@ -173,7 +172,7 @@ public class AdobeFlashExecutor {
                 actions2.add(new ActionReturn());
 
                 doaTag.setActions(actions2);
-                swf.tags.add(asmIndex, doaTag);
+                swf.addTag(doaTag, asm);
 
                 i++;
             }
@@ -211,7 +210,7 @@ public class AdobeFlashExecutor {
         SWF swf = new SWF(new BufferedInputStream(new FileInputStream(runFileAs3)), false);
         swf.version = SWF.MAX_VERSION;
         DoABC2Tag abcTag = null;
-        for (Tag t : swf.tags) {
+        for (Tag t : swf.getTags()) {
             if (t instanceof DoABC2Tag) {
                 abcTag = ((DoABC2Tag) t);
                 break;

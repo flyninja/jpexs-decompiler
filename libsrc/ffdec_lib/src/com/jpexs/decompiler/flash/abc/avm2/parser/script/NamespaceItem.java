@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,7 +23,6 @@ import com.jpexs.decompiler.flash.abc.types.ValueKind;
 import com.jpexs.decompiler.flash.abc.types.traits.TraitSlotConst;
 import com.jpexs.decompiler.graph.CompilationException;
 import com.jpexs.decompiler.graph.DottedChain;
-import com.jpexs.decompiler.graph.TypeItem;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -35,7 +34,9 @@ import java.util.Objects;
 public class NamespaceItem {
 
     public DottedChain name;
+
     public int kind;
+
     private int nsIndex = -1;
 
     public void forceResolve(AbcIndexing abcIndex) {
@@ -149,5 +150,4 @@ public class NamespaceItem {
 
         return abcIndex.getSelectedAbc().constants.getNamespaceSetId(nssa, true);
     }
-
 }

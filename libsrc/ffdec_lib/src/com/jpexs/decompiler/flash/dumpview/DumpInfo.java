@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,11 +16,16 @@
  */
 package com.jpexs.decompiler.flash.dumpview;
 
+import com.jpexs.decompiler.flash.SWFInputStream;
+import com.jpexs.decompiler.flash.tags.Tag;
 import com.jpexs.decompiler.flash.tags.TagStub;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -33,6 +38,8 @@ public class DumpInfo {
     public String type;
 
     public TagStub tagToResolve = null;
+
+    public Tag resolvedTag = null;
 
     public Object previewValue;
 
@@ -117,4 +124,25 @@ public class DumpInfo {
         String value = previewValue == null ? "" : previewValue.toString();
         return name + " (" + type + ")" + (value.isEmpty() ? "" : " = " + value);
     }
+
+    public void resolveTag() {
+        if (tagToResolve != null) {
+            TagStub tagStub = tagToResolve;
+            try {
+                SWFInputStream sis = tagStub.getDataStream();
+                sis.seek(tagStub.getDataPos());
+                sis.dumpInfo = this;
+                resolvedTag = SWFInputStream.resolveTag(tagStub, 0, false, true, false);
+            } catch (InterruptedException | IOException ex) {
+                Logger.getLogger(DumpInfo.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            tagToResolve = null;
+        }
+    }
+
+    public Tag getTag() {
+        resolveTag();
+        return resolvedTag;
+    }
+
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,8 +41,8 @@ public class AddIns extends InstructionDefinition {
 
     @Override
     public boolean execute(LocalDataArea lda, AVM2ConstantPool constants, AVM2Instruction ins) {
-        Object right = lda.operandStack.pop();
-        Object left = lda.operandStack.pop();
+        Object right = EcmaScript.toPrimitive(lda.operandStack.pop(), "");
+        Object left = EcmaScript.toPrimitive(lda.operandStack.pop(), "");
         if (EcmaScript.type(left) == EcmaType.STRING || EcmaScript.type(right) == EcmaType.STRING) {
             String ret = EcmaScript.toString(left) + EcmaScript.toString(right);
             lda.operandStack.push(ret);

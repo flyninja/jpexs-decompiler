@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -161,7 +161,7 @@ public class SWFOutputStream extends OutputStream {
      */
     public void writeUI8(int value) throws IOException {
         if (value > 0xff) {
-            throw new Error("Value is too large for UI8: " + value);
+            throw new IllegalArgumentException("Value is too large for UI8: " + value);
         }
 
         write(value);
@@ -218,7 +218,7 @@ public class SWFOutputStream extends OutputStream {
      */
     public void writeUI32(long value) throws IOException {
         if (value > 0xffffffffL) {
-            throw new Error("Value is too large for UI32: " + value);
+            throw new IllegalArgumentException("Value is too large for UI32: " + value);
         }
 
         write((int) (value & 0xff));
@@ -235,7 +235,7 @@ public class SWFOutputStream extends OutputStream {
      */
     public void writeUI16(int value) throws IOException {
         if (value > 0xffff) {
-            throw new Error("Value is too large for UI16: " + value);
+            throw new IllegalArgumentException("Value is too large for UI16: " + value);
         }
 
         write((int) (value & 0xff));
@@ -250,7 +250,7 @@ public class SWFOutputStream extends OutputStream {
      */
     public void writeSI32(long value) throws IOException {
         if (value > 0x7fffffffL) {
-            throw new Error("Value is too large for SI32: " + value);
+            throw new IllegalArgumentException("Value is too large for SI32: " + value);
         }
 
         writeUI32(value);
@@ -280,7 +280,7 @@ public class SWFOutputStream extends OutputStream {
      */
     public void writeSI8(int value) throws IOException {
         if (value > 0x7ff) {
-            throw new Error("Value is too large for SI8: " + value);
+            throw new IllegalArgumentException("Value is too large for SI8: " + value);
         }
 
         writeUI8(value);
@@ -465,7 +465,7 @@ public class SWFOutputStream extends OutputStream {
     public void writeRECT(RECT value) throws IOException {
         int nBits = 0;
 
-        if (Configuration.debugCopy.get()) {
+        if (Configuration._debugCopy.get()) {
             nBits = Math.max(nBits, value.nbits);
         }
 
@@ -478,7 +478,7 @@ public class SWFOutputStream extends OutputStream {
         nBits = enlargeBitCountS(nBits, yMin);
         nBits = enlargeBitCountS(nBits, yMax);
 
-        if (Configuration.debugCopy.get()) {
+        if (Configuration._debugCopy.get()) {
             nBits = Math.max(nBits, value.nbits);
         }
 
@@ -506,7 +506,7 @@ public class SWFOutputStream extends OutputStream {
      * @param tags List of tag values
      * @throws IOException
      */
-    public void writeTags(List<Tag> tags) throws IOException {
+    public void writeTags(Iterable<Tag> tags) throws IOException {
         for (Tag tag : tags) {
             tag.writeTag(this);
         }
@@ -640,7 +640,7 @@ public class SWFOutputStream extends OutputStream {
             nBits = enlargeBitCountS(nBits, value.scaleX);
             nBits = enlargeBitCountS(nBits, value.scaleY);
 
-            if (Configuration.debugCopy.get()) {
+            if (Configuration._debugCopy.get()) {
                 nBits = Math.max(nBits, value.nScaleBits);
             }
 
@@ -654,7 +654,7 @@ public class SWFOutputStream extends OutputStream {
             nBits = enlargeBitCountS(nBits, value.rotateSkew0);
             nBits = enlargeBitCountS(nBits, value.rotateSkew1);
 
-            if (Configuration.debugCopy.get()) {
+            if (Configuration._debugCopy.get()) {
                 nBits = Math.max(nBits, value.nRotateBits);
             }
 
@@ -666,7 +666,7 @@ public class SWFOutputStream extends OutputStream {
         NTranslateBits = enlargeBitCountS(NTranslateBits, value.translateX);
         NTranslateBits = enlargeBitCountS(NTranslateBits, value.translateY);
 
-        if (Configuration.debugCopy.get()) {
+        if (Configuration._debugCopy.get()) {
             NTranslateBits = Math.max(NTranslateBits, value.nTranslateBits);
         }
 
@@ -699,7 +699,7 @@ public class SWFOutputStream extends OutputStream {
             Nbits = enlargeBitCountS(Nbits, value.blueAddTerm);
         }
 
-        if (Configuration.debugCopy.get()) {
+        if (Configuration._debugCopy.get()) {
             Nbits = Math.max(Nbits, value.nbits);
         }
 
@@ -740,7 +740,7 @@ public class SWFOutputStream extends OutputStream {
             Nbits = enlargeBitCountS(Nbits, value.alphaAddTerm);
         }
 
-        if (Configuration.debugCopy.get()) {
+        if (Configuration._debugCopy.get()) {
             Nbits = Math.max(Nbits, value.nbits);
         }
 
@@ -1317,7 +1317,7 @@ public class SWFOutputStream extends OutputStream {
         writeUB(1, value.noClose ? 1 : 0);
         writeUB(2, value.endCapStyle);
         if (value.joinStyle == LINESTYLE2.MITER_JOIN) {
-            writeUI16(value.miterLimitFactor);
+            writeFIXED8(value.miterLimitFactor);
         }
         if (!value.hasFillFlag) {
             writeRGBA((RGBA) value.color);
@@ -1406,7 +1406,7 @@ public class SWFOutputStream extends OutputStream {
                 writeUB(1, 1); // typeFlag
                 writeUB(1, 0); // curvedEdge
                 int numBits = Math.max(getNeededBitsS(cer.controlDeltaX, cer.controlDeltaY, cer.anchorDeltaX, cer.anchorDeltaY) - 2, 0);
-                if (Configuration.debugCopy.get()) {
+                if (Configuration._debugCopy.get()) {
                     numBits = Math.max(numBits, cer.numBits);
                 }
 
@@ -1421,7 +1421,7 @@ public class SWFOutputStream extends OutputStream {
                 writeUB(1, 1); // typeFlag
                 writeUB(1, 1); // straightEdge
                 int numBits = Math.max(getNeededBitsS(ser.deltaX, ser.deltaY) - 2, 0);
-                if (Configuration.debugCopy.get()) {
+                if (Configuration._debugCopy.get()) {
                     numBits = Math.max(numBits, ser.numBits);
                 }
 
@@ -1447,7 +1447,7 @@ public class SWFOutputStream extends OutputStream {
                 writeUB(1, scr.stateMoveTo ? 1 : 0);
                 if (scr.stateMoveTo) {
                     int moveBits = getNeededBitsS(scr.moveDeltaX, scr.moveDeltaY);
-                    if (Configuration.debugCopy.get()) {
+                    if (Configuration._debugCopy.get()) {
                         moveBits = Math.max(moveBits, scr.moveBits);
                     }
 
@@ -1471,7 +1471,7 @@ public class SWFOutputStream extends OutputStream {
                     fillBits = getNeededBitsU(scr.fillStyles.fillStyles.length);
                     lineBits = getNeededBitsU(scr.lineStyles.lineStyles.length);
 
-                    if (Configuration.debugCopy.get()) {
+                    if (Configuration._debugCopy.get()) {
                         fillBits = Math.max(fillBits, scr.numFillBits);
                         lineBits = Math.max(lineBits, scr.numLineBits);
                     }

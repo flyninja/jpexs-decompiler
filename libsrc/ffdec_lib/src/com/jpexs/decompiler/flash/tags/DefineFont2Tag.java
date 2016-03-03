@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -50,7 +50,7 @@ public class DefineFont2Tag extends FontTag {
     public static final String NAME = "DefineFont2";
 
     @SWFType(BasicType.UI16)
-    public int fontId;
+    public int fontID;
 
     public boolean fontFlagsHasLayout;
 
@@ -106,7 +106,7 @@ public class DefineFont2Tag extends FontTag {
      */
     public DefineFont2Tag(SWF swf) {
         super(swf, ID, NAME, null);
-        fontId = swf.getNextCharacterId();
+        fontID = swf.getNextCharacterId();
         languageCode = new LANGCODE();
         fontName = "New font";
         glyphShapeTable = new ArrayList<>();
@@ -127,7 +127,7 @@ public class DefineFont2Tag extends FontTag {
 
     @Override
     public final void readData(SWFInputStream sis, ByteArrayRange data, int level, boolean parallel, boolean skipUnusualTags, boolean lazy) throws IOException {
-        fontId = sis.readUI16("fontId");
+        fontID = sis.readUI16("fontId");
         fontFlagsHasLayout = sis.readUB(1, "fontFlagsHasLayout") == 1;
         fontFlagsShiftJIS = sis.readUB(1, "fontFlagsShiftJIS") == 1;
         fontFlagsSmallText = sis.readUB(1, "fontFlagsSmallText") == 1;
@@ -195,6 +195,48 @@ public class DefineFont2Tag extends FontTag {
         }
     }
 
+    private void checkWideParameters() {
+        int numGlyphs = glyphShapeTable.size();
+
+        if (!fontFlagsWideOffsets) {
+            ByteArrayOutputStream baosGlyphShapes = new ByteArrayOutputStream();
+            SWFOutputStream sos3 = new SWFOutputStream(baosGlyphShapes, getVersion());
+            for (int i = 0; i < numGlyphs; i++) {
+                long offset = ((glyphShapeTable.size() + 1/*CodeTableOffset*/) * (fontFlagsWideOffsets ? 4 : 2) + sos3.getPos());
+                if (offset > 0xffff) {
+                    fontFlagsWideOffsets = true;
+                    checkWideParameters();
+                    return;
+                }
+                try {
+                    sos3.writeSHAPE(glyphShapeTable.get(i), 1);
+                } catch (IOException ex) {
+                    //should not happen
+                    return;
+                }
+            }
+            byte[] baGlyphShapes = baosGlyphShapes.toByteArray();
+
+            if (numGlyphs > 0) {
+                long offset = (glyphShapeTable.size() + 1/*CodeTableOffset*/) * (fontFlagsWideOffsets ? 4 : 2) + baGlyphShapes.length;
+                if (offset > 0xffff) {
+                    fontFlagsWideOffsets = true;
+                    checkWideParameters();
+                    return;
+                }
+            }
+        }
+
+        if (!fontFlagsWideCodes) {
+            for (int i = 0; i < numGlyphs; i++) {
+                long code = codeTable.get(i);
+                if (code > 0xffff) {
+                    fontFlagsWideCodes = true;
+                }
+            }
+        }
+    }
+
     /**
      * Gets data bytes
      *
@@ -203,7 +245,8 @@ public class DefineFont2Tag extends FontTag {
      */
     @Override
     public void getData(SWFOutputStream sos) throws IOException {
-        sos.writeUI16(fontId);
+        checkWideParameters();
+        sos.writeUI16(fontID);
         sos.writeUB(1, fontFlagsHasLayout ? 1 : 0);
         sos.writeUB(1, fontFlagsShiftJIS ? 1 : 0);
         sos.writeUB(1, fontFlagsSmallText ? 1 : 0);
@@ -305,12 +348,12 @@ public class DefineFont2Tag extends FontTag {
 
     @Override
     public int getCharacterId() {
-        return fontId;
+        return fontID;
     }
 
     @Override
     public void setCharacterId(int characterId) {
-        this.fontId = characterId;
+        this.fontID = characterId;
     }
 
     @Override
@@ -424,7 +467,7 @@ public class DefineFont2Tag extends FontTag {
         }
 
         if (!exists) {
-            shiftGlyphIndices(fontId, pos);
+            shiftGlyphIndices(fontID, pos);
             glyphShapeTable.add(pos, shp);
             codeTable.add(pos, (int) character);
         } else {
@@ -442,6 +485,7 @@ public class DefineFont2Tag extends FontTag {
             }
         }
 
+        checkWideParameters();
         setModified(true);
     }
 
@@ -466,7 +510,7 @@ public class DefineFont2Tag extends FontTag {
     }
 
     @Override
-    public String getCharacters(List<Tag> tags) {
+    public String getCharacters() {
         StringBuilder ret = new StringBuilder();
         for (int i : codeTable) {
             ret.append((char) i);

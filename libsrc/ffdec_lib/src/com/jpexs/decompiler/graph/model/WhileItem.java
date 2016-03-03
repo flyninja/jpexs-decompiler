@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -45,6 +45,9 @@ public class WhileItem extends LoopItem implements Block {
     @Override
     public List<List<GraphTargetItem>> getSubs() {
         List<List<GraphTargetItem>> ret = new ArrayList<>();
+        if (expression != null) {
+            ret.add(expression);
+        }
         if (commands != null) {
             ret.add(commands);
         }
@@ -77,7 +80,12 @@ public class WhileItem extends LoopItem implements Block {
             if (i != 0) {
                 writer.append(", ");
             }
-            expression.get(i).toString(writer, localData);
+            if (i == expression.size() - 1) {
+                expression.get(i).toStringBoolean(writer, localData);
+            } else {
+                expression.get(i).toString(writer, localData);
+            }
+
         }
         writer.append(")");
         appendBlock(expression.get(expression.size() - 1), writer, localData, commands);

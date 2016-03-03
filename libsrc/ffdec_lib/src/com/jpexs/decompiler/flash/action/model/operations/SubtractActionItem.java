@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -36,7 +36,7 @@ import java.util.List;
 public class SubtractActionItem extends BinaryOpItem {
 
     public SubtractActionItem(GraphSourceItem instruction, GraphSourceItem lineStartIns, GraphTargetItem leftSide, GraphTargetItem rightSide) {
-        super(instruction, lineStartIns, PRECEDENCE_ADDITIVE, leftSide, rightSide, "-");
+        super(instruction, lineStartIns, PRECEDENCE_ADDITIVE, leftSide, rightSide, "-", "Number", "Number");
     }
 
     @Override
@@ -56,28 +56,26 @@ public class SubtractActionItem extends BinaryOpItem {
                 || ((((DirectValueActionItem) leftSide).value instanceof Long) && (((Long) ((DirectValueActionItem) leftSide).value) == 0L)))) {
             writer.append(operator);
             writer.append(" ");
-            rightSide.appendTo(writer, localData);
+            rightSide.appendTry(writer, localData);
             return writer;
-        } else {
-            if (rightSide.getPrecedence() >= precedence) { // >=  add or subtract too
+        } else if (rightSide.getPrecedence() >= precedence) { // >=  add or subtract too
 
-                if (leftSide.getPrecedence() > precedence) {
-                    writer.append("(");
-                    leftSide.toString(writer, localData);
-                    writer.append(")");
-                } else {
-                    leftSide.toString(writer, localData);
-                }
-                writer.append(" ");
-                writer.append(operator);
-                writer.append(" ");
-
+            if (leftSide.getPrecedence() > precedence) {
                 writer.append("(");
-                rightSide.toString(writer, localData);
-                return writer.append(")");
+                leftSide.toString(writer, localData);
+                writer.append(")");
             } else {
-                return super.appendTo(writer, localData);
+                leftSide.toString(writer, localData);
             }
+            writer.append(" ");
+            writer.append(operator);
+            writer.append(" ");
+
+            writer.append("(");
+            rightSide.toString(writer, localData);
+            return writer.append(")");
+        } else {
+            return super.appendTo(writer, localData);
         }
     }
 

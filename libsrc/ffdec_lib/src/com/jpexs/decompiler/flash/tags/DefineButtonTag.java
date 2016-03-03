@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -74,15 +74,8 @@ public class DefineButtonTag extends ButtonTag implements ASMSource {
     /**
      * Actions to perform
      */
-    //public List<Action> actions;
     @HideInRawEdit
     public ByteArrayRange actionBytes;
-
-    private Timeline timeline;
-
-    private boolean isSingleFrameInitialized;
-
-    private boolean isSingleFrame;
 
     private String scriptName = "-";
 
@@ -226,13 +219,6 @@ public class DefineButtonTag extends ButtonTag implements ASMSource {
     }
 
     @Override
-    public void getNeededCharacters(Set<Integer> needed) {
-        for (BUTTONRECORD r : characters) {
-            needed.add(r.characterId);
-        }
-    }
-
-    @Override
     public boolean replaceCharacter(int oldCharacterId, int newCharacterId) {
         boolean modified = false;
         for (int i = 0; i < characters.size(); i++) {
@@ -323,21 +309,6 @@ public class DefineButtonTag extends ButtonTag implements ASMSource {
     }
 
     @Override
-    public boolean isSingleFrame() {
-        if (!isSingleFrameInitialized) {
-            initialiteIsSingleFrame();
-        }
-        return isSingleFrame;
-    }
-
-    private synchronized void initialiteIsSingleFrame() {
-        if (!isSingleFrameInitialized) {
-            isSingleFrame = getTimeline().isSingleFrame();
-            isSingleFrameInitialized = true;
-        }
-    }
-
-    @Override
     public GraphTextWriter getActionSourcePrefix(GraphTextWriter writer) {
         return writer;
     }
@@ -358,27 +329,9 @@ public class DefineButtonTag extends ButtonTag implements ASMSource {
     }
 
     @Override
-    public Timeline getTimeline() {
-        if (timeline != null) {
-            return timeline;
-        }
-
-        timeline = new Timeline(swf, this, new ArrayList<>(), buttonId, getRect());
-        initTimeline(timeline);
-        return timeline;
-    }
-
-    @Override
-    public void resetTimeline() {
-        if (timeline != null) {
-            timeline.reset(swf, this, new ArrayList<>(), buttonId, getRect());
-            initTimeline(timeline);
-        }
-    }
-
-    private void initTimeline(Timeline timeline) {
+    protected void initTimeline(Timeline timeline) {
         ColorTransform clrTrans = null;
-        for (Tag t : swf.tags) {
+        for (Tag t : swf.getTags()) {
             if (t instanceof DefineButtonCxformTag) {
                 DefineButtonCxformTag cx = (DefineButtonCxformTag) t;
                 clrTrans = cx.buttonColorTransform;
@@ -417,17 +370,23 @@ public class DefineButtonTag extends ButtonTag implements ASMSource {
         }
 
         timeline.addFrame(frameUp);
+
         if (frameOver.layers.isEmpty()) {
             frameOver = frameUp;
         }
+
         timeline.addFrame(frameOver);
+
         if (frameDown.layers.isEmpty()) {
             frameDown = frameOver;
         }
+
         timeline.addFrame(frameDown);
+
         if (frameHit.layers.isEmpty()) {
             frameHit = frameUp;
         }
+
         timeline.addFrame(frameHit);
     }
 

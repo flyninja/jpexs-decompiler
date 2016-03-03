@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -52,10 +52,13 @@ import com.jpexs.decompiler.flash.abc.avm2.instructions.comparison.GreaterThanIn
 import com.jpexs.decompiler.flash.abc.avm2.instructions.comparison.LessEqualsIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.comparison.LessThanIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.comparison.StrictEqualsIns;
+import com.jpexs.decompiler.flash.abc.avm2.instructions.construction.NewArrayIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.construction.NewFunctionIns;
+import com.jpexs.decompiler.flash.abc.avm2.instructions.construction.NewObjectIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.jumps.JumpIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.localregs.GetLocalTypeIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.localregs.SetLocalTypeIns;
+import com.jpexs.decompiler.flash.abc.avm2.instructions.other.GetPropertyIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.stack.DupIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.stack.PopIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.stack.PushByteIns;
@@ -158,7 +161,7 @@ public class AVM2DeobfuscatorSimple extends SWFDecompilerAdapter {
         int instructionsProcessed = 0;
 
         FixItemCounterStack stack = (FixItemCounterStack) localData.operandStack;
-        Set<Long> refs = code.getImportantOffsets(body);
+        Set<Long> refs = code.getImportantOffsets(body, false);
         boolean modified = false;
         while (true) {
             if (idx > endIdx) {
@@ -255,6 +258,9 @@ public class AVM2DeobfuscatorSimple extends SWFDecompilerAdapter {
                     || def instanceof GetLocalTypeIns
                     || def instanceof SetLocalTypeIns
                     || def instanceof NewFunctionIns
+                    || def instanceof NewArrayIns
+                    || def instanceof NewObjectIns
+                    || def instanceof GetPropertyIns
                     || def instanceof CoerceOrConvertTypeIns) {
                 ok = true;
             }

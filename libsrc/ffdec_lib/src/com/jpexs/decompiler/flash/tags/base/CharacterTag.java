@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,8 +17,11 @@
 package com.jpexs.decompiler.flash.tags.base;
 
 import com.jpexs.decompiler.flash.SWF;
+import com.jpexs.decompiler.flash.exporters.commonshape.ExportRectangle;
+import com.jpexs.decompiler.flash.tags.DefineScalingGridTag;
 import com.jpexs.decompiler.flash.tags.Tag;
 import com.jpexs.helpers.ByteArrayRange;
+import java.util.List;
 
 /**
  *
@@ -73,5 +76,15 @@ public abstract class CharacterTag extends Tag implements CharacterIdTag {
 
     public String getExportName() {
         return exportName;
+    }
+
+    public DefineScalingGridTag getScalingGridTag() {
+        List<CharacterIdTag> mtags = swf.getCharacterIdTags(getCharacterId());
+        for (CharacterIdTag ct : mtags) {
+            if (ct instanceof DefineScalingGridTag) {
+                return (DefineScalingGridTag) ct;
+            }
+        }
+        return null;
     }
 }

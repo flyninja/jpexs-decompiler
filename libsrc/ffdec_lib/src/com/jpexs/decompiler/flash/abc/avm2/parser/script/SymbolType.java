@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -206,7 +206,8 @@ public enum SymbolType {
     FILTER(GraphTargetItem.PRECEDENCE_PRIMARY, false),
     DESCENDANTS(GraphTargetItem.PRECEDENCE_PRIMARY, false),
     NATIVE,
-    PREPROCESSOR(GraphTargetItem.PRECEDENCE_PRIMARY, false);
+    PREPROCESSOR(GraphTargetItem.PRECEDENCE_PRIMARY, false),
+    REGEXP(GraphTargetItem.PRECEDENCE_PRIMARY, false);
 
     private int precedence = GraphTargetItem.NOPRECEDENCE;
 

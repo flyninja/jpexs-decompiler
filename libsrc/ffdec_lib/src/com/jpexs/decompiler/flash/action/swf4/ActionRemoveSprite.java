@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,9 @@ package com.jpexs.decompiler.flash.action.swf4;
 
 import com.jpexs.decompiler.flash.BaseLocalData;
 import com.jpexs.decompiler.flash.action.Action;
+import com.jpexs.decompiler.flash.action.LocalDataArea;
 import com.jpexs.decompiler.flash.action.model.RemoveSpriteActionItem;
+import com.jpexs.decompiler.flash.ecma.EcmaScript;
 import com.jpexs.decompiler.flash.types.annotations.SWFVersion;
 import com.jpexs.decompiler.graph.GraphSourceItem;
 import com.jpexs.decompiler.graph.GraphTargetItem;
@@ -40,6 +42,16 @@ public class ActionRemoveSprite extends Action {
     @Override
     public String toString() {
         return "RemoveSprite";
+    }
+
+    @Override
+    public boolean execute(LocalDataArea lda) {
+        if (lda.stack.isEmpty()) {
+            return false;
+        }
+        String target = EcmaScript.toString(lda.stack.pop());
+        lda.stage.removeMember(target);
+        return true;
     }
 
     @Override

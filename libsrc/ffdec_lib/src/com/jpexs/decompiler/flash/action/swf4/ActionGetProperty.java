@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,8 +18,12 @@ package com.jpexs.decompiler.flash.action.swf4;
 
 import com.jpexs.decompiler.flash.BaseLocalData;
 import com.jpexs.decompiler.flash.action.Action;
+import com.jpexs.decompiler.flash.action.ActionScriptObject;
+import com.jpexs.decompiler.flash.action.LocalDataArea;
 import com.jpexs.decompiler.flash.action.model.DirectValueActionItem;
 import com.jpexs.decompiler.flash.action.model.GetPropertyActionItem;
+import com.jpexs.decompiler.flash.ecma.EcmaScript;
+import com.jpexs.decompiler.flash.ecma.Undefined;
 import com.jpexs.decompiler.flash.types.annotations.SWFVersion;
 import com.jpexs.decompiler.graph.GraphSourceItem;
 import com.jpexs.decompiler.graph.GraphTargetItem;
@@ -41,6 +45,22 @@ public class ActionGetProperty extends Action {
     @Override
     public String toString() {
         return "GetProperty";
+    }
+
+    @Override
+    public boolean execute(LocalDataArea lda) {
+        if (lda.stack.size() < 2) {
+            return false;
+        }
+        int index = EcmaScript.toInt32(lda.stack.pop());
+        String target = EcmaScript.toString(lda.stack.pop());
+        Object movieClip = lda.stage.getMember(target);
+        if (movieClip instanceof ActionScriptObject) {
+            lda.stack.push(((ActionScriptObject) movieClip).getProperty(index));
+            return true;
+        }
+        lda.stack.push(Undefined.INSTANCE);
+        return true;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -104,7 +104,10 @@ public class SVGShapeExporter extends DefaultSVGShapeExporter {
         if (image != null) {
             SerializableImage img = image.getImage();
             if (img != null) {
-                colorTransform.apply(img);
+                if (colorTransform != null) {
+                    colorTransform.apply(img);
+                }
+
                 int width = img.getWidth();
                 int height = img.getHeight();
                 lastPatternId++;
@@ -135,7 +138,7 @@ public class SVGShapeExporter extends DefaultSVGShapeExporter {
     }
 
     @Override
-    public void lineStyle(double thickness, RGB color, boolean pixelHinting, String scaleMode, int startCaps, int endCaps, int joints, int miterLimit) {
+    public void lineStyle(double thickness, RGB color, boolean pixelHinting, String scaleMode, int startCaps, int endCaps, int joints, float miterLimit) {
         finalizePath();
         thickness *= zoom / SWF.unitDivisor;
         path.setAttribute("fill", "none");
@@ -169,8 +172,8 @@ public class SVGShapeExporter extends DefaultSVGShapeExporter {
                 break;
             default:
                 path.setAttribute("stroke-linejoin", "miter");
-                if (miterLimit >= 1 && miterLimit != 4) {
-                    path.setAttribute("stroke-miterlimit", Integer.toString(miterLimit));
+                if (miterLimit >= 1 && miterLimit != 4f) {
+                    path.setAttribute("stroke-miterlimit", Double.toString(miterLimit));
                 }
                 break;
         }

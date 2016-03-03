@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,6 +42,7 @@ import com.jpexs.decompiler.flash.abc.avm2.instructions.arithmetic.NotIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.arithmetic.SubtractIIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.arithmetic.SubtractIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.bitwise.BitAndIns;
+import com.jpexs.decompiler.flash.abc.avm2.instructions.bitwise.BitNotIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.bitwise.BitOrIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.bitwise.BitXorIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.bitwise.LShiftIns;
@@ -53,10 +54,15 @@ import com.jpexs.decompiler.flash.abc.avm2.instructions.comparison.GreaterThanIn
 import com.jpexs.decompiler.flash.abc.avm2.instructions.comparison.LessEqualsIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.comparison.LessThanIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.comparison.StrictEqualsIns;
+import com.jpexs.decompiler.flash.abc.avm2.instructions.construction.ConstructIns;
+import com.jpexs.decompiler.flash.abc.avm2.instructions.construction.NewArrayIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.construction.NewFunctionIns;
+import com.jpexs.decompiler.flash.abc.avm2.instructions.construction.NewObjectIns;
+import com.jpexs.decompiler.flash.abc.avm2.instructions.executing.CallIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.jumps.JumpIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.localregs.GetLocalTypeIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.localregs.SetLocalTypeIns;
+import com.jpexs.decompiler.flash.abc.avm2.instructions.other.GetPropertyIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.stack.DupIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.stack.PopIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.stack.PushByteIns;
@@ -70,8 +76,12 @@ import com.jpexs.decompiler.flash.abc.avm2.instructions.stack.PushTrueIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.stack.PushUndefinedIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.stack.SwapIns;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.types.CoerceOrConvertTypeIns;
+import com.jpexs.decompiler.flash.abc.avm2.instructions.types.TypeOfIns;
 import com.jpexs.decompiler.flash.abc.avm2.model.FloatValueAVM2Item;
+import com.jpexs.decompiler.flash.abc.avm2.model.GetPropertyAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.IntegerValueAVM2Item;
+import com.jpexs.decompiler.flash.abc.avm2.model.NewArrayAVM2Item;
+import com.jpexs.decompiler.flash.abc.avm2.model.NewFunctionAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.NullAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.StringAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.UndefinedAVM2Item;
@@ -225,7 +235,9 @@ public class AVM2DeobfuscatorSimpleOld extends SWFDecompilerAdapter {
             }
 
             AVM2Instruction ins = code.code.get(idx);
-            if (ins.definition instanceof NewFunctionIns) {
+            InstructionDefinition def = ins.definition;
+            //System.err.println("" + ins + " stack size:" + stack.size());
+            /*if (ins.definition instanceof NewFunctionIns) {
                 if (idx + 1 < code.code.size()) {
                     if (code.code.get(idx + 1).definition instanceof PopIns) {
                         code.removeInstruction(idx + 1, body);
@@ -233,17 +245,43 @@ public class AVM2DeobfuscatorSimpleOld extends SWFDecompilerAdapter {
                         continue;
                     }
                 }
-            } else {
+            } else */
+            {
                 // do not throw EmptyStackException, much faster
                 int requiredStackSize = ins.getStackPopCount(localData);
                 if (stack.size() < requiredStackSize) {
                     return;
                 }
 
+                //Do not duplicate, whole tree, simplify first.  (Simplify always?)
+                if (def instanceof DupIns) {
+                    stack.simplify();
+                }
+
+                if (def instanceof PopIns) {
+                    if (!stack.isEmpty()) {
+                        //System.err.println("pop:" + stack.peek().getClass());
+                        if (stack.peek() instanceof NewFunctionAVM2Item) {
+                            AVM2Instruction fins = ((AVM2Instruction) stack.peek().getSrc());
+                            AVM2Instruction nins = idx + 1 < code.code.size() ? code.code.get(idx + 1) : null;
+                            if (fins.definition instanceof NewFunctionIns) {
+                                int fidx = code.code.indexOf(fins);
+                                code.removeInstruction(fidx, body);
+                            }
+                            int nidx = code.code.indexOf(ins);
+                            code.removeInstruction(nidx, body);
+                            if (nins == null) {
+                                idx = code.code.size();
+                            } else {
+                                idx = code.code.indexOf(nins);
+                            }
+                            continue;
+                        }
+                    }
+                }
+
                 ins.translate(localData, stack, output, Graph.SOP_USE_STATIC, "");
             }
-
-            InstructionDefinition def = ins.definition;
 
             if (inlineIns.contains(ins)) {
                 if (def instanceof SetLocalTypeIns) {
@@ -314,12 +352,31 @@ public class AVM2DeobfuscatorSimpleOld extends SWFDecompilerAdapter {
                     || def instanceof GreaterEqualsIns
                     || def instanceof GreaterThanIns
                     || def instanceof LessThanIns
+                    || def instanceof BitNotIns
                     || def instanceof StrictEqualsIns
                     || def instanceof PopIns
                     || def instanceof GetLocalTypeIns
                     || def instanceof NewFunctionIns
-                    || def instanceof CoerceOrConvertTypeIns) {
+                    || def instanceof NewArrayIns
+                    || def instanceof NewObjectIns
+                    || def instanceof GetPropertyIns
+                    || def instanceof CoerceOrConvertTypeIns
+                    || def instanceof ConstructIns
+                    || def instanceof CallIns
+                    || def instanceof TypeOfIns) {
                 ok = true;
+            }
+
+            if (def instanceof GetPropertyIns) {
+                GetPropertyAVM2Item avi = (GetPropertyAVM2Item) stack.peek();
+                ok = false;
+                if (avi.object instanceof NewArrayAVM2Item) {
+                    if (((NewArrayAVM2Item) avi.object).values.isEmpty()) {
+                        stack.pop();
+                        stack.push(new UndefinedAVM2Item(null, null));
+                        ok = true;
+                    }
+                }
             }
 
             if (!ok) {
@@ -335,16 +392,14 @@ public class AVM2DeobfuscatorSimpleOld extends SWFDecompilerAdapter {
 
                     stack.pop();
                     stack.push(staticRegs.get(regId));
-                } else {
+                } else if (regId > 0) {
                     break;
                 }
             }
-
             boolean ifed = false;
             if (def instanceof JumpIns) {
                 long address = ins.getTargetAddress();
                 idx = code.adr2pos(address);
-
                 if (idx == -1) {
                     throw new TranslateException("Jump target not found: " + address);
                 }
@@ -354,15 +409,14 @@ public class AVM2DeobfuscatorSimpleOld extends SWFDecompilerAdapter {
                 }
 
                 GraphTargetItem top = stack.pop();
-                Object res = top.getResult();
+                Boolean res = top.getResultAsBoolean();
                 long address = ins.getTargetAddress();
                 int nidx = code.adr2pos(address);//code.indexOf(code.getByAddress(address));
                 AVM2Instruction tarIns = code.code.get(nidx);
 
                 //Some IfType instructions need more than 1 operand, we must pop out all of them
                 int stackCount = -def.getStackDelta(ins, abc);
-
-                if (EcmaScript.toBoolean(res)) {
+                if (res) {
                     //System.err.println("replacing " + ins + " on " + idx + " with jump");
                     AVM2Instruction jumpIns = new AVM2Instruction(0, AVM2Instructions.Jump, new int[]{0});
                     //jumpIns.operands[0] = ins.operands[0] /*- ins.getBytes().length*/ + jumpIns.getBytes().length;
@@ -398,7 +452,7 @@ public class AVM2DeobfuscatorSimpleOld extends SWFDecompilerAdapter {
             }
 
             if (ifed) {
-                break;
+                //break;
             }
         }
     }

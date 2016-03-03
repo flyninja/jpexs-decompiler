@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS
+ *  Copyright (C) 2010-2016 JPEXS
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ import com.jpexs.decompiler.flash.helpers.HighlightedText;
 import com.jpexs.decompiler.flash.helpers.hilight.HighlightSpecialType;
 import com.jpexs.decompiler.flash.helpers.hilight.Highlighting;
 import com.jpexs.decompiler.flash.tags.DefineEditTextTag;
+import com.jpexs.decompiler.flash.tags.Tag;
 import com.jpexs.decompiler.flash.tags.base.FontTag;
 import com.jpexs.decompiler.flash.tags.base.MissingCharacterHandler;
 import com.jpexs.decompiler.flash.tags.base.TextTag;
@@ -58,6 +59,8 @@ public class TextPanel extends JPanel implements TagEditorPanel {
     private final SearchPanel<TextTag> textSearchPanel;
 
     private final LineMarkedEditorPane textValue;
+
+    private final JPanel buttonsPanel;
 
     private final JButton textEditButton;
 
@@ -132,7 +135,7 @@ public class TextPanel extends JPanel implements TagEditorPanel {
         topPanel.add(textButtonsPanel);
         add(topPanel, BorderLayout.NORTH);
 
-        JPanel buttonsPanel = new JPanel(new FlowLayout());
+        buttonsPanel = new JPanel(new FlowLayout());
         textEditButton = createButton("button.edit", "edit16", null, e -> editText());
         textSaveButton = createButton("button.save", "save16", null, e -> saveText(true));
         textCancelButton = createButton("button.cancel", "cancel16", null, e -> cancelText());
@@ -170,10 +173,30 @@ public class TextPanel extends JPanel implements TagEditorPanel {
 
     public void setText(TextTag textTag) {
         this.textTag = textTag;
-        textValue.setText(textTag.getFormattedText().text);
+        String formattedText;
+        try {
+            formattedText = textTag.getFormattedText(false).text;
+        } catch (IndexOutOfBoundsException ex) {
+            formattedText = "Invalid text tag";
+        }
+
+        textValue.setText(formattedText);
         textValue.setCaretPosition(0);
         setModified(false);
         setEditText(false);
+        boolean readOnly = ((Tag) textTag).isReadOnly();
+        if (readOnly) {
+            textValue.setEditable(false);
+        }
+        buttonsPanel.setVisible(!readOnly);
+        textAlignLeftButton.setVisible(!readOnly);
+        textAlignCenterButton.setVisible(!readOnly);
+        textAlignRightButton.setVisible(!readOnly);
+        textAlignJustifyButton.setVisible(!readOnly);
+        decreaseTranslateXButton.setVisible(!readOnly);
+        increaseTranslateXButton.setVisible(!readOnly);
+        changeCaseButton.setVisible(!readOnly);
+        undoChangesButton.setVisible(!readOnly);
     }
 
     private boolean isModified() {
@@ -188,7 +211,7 @@ public class TextPanel extends JPanel implements TagEditorPanel {
     public void focusTextValue() {
         textValue.requestFocusInWindow();
         if (textTag != null && !isModified()) {
-            HighlightedText text = textTag.getFormattedText();
+            HighlightedText text = textTag.getFormattedText(false);
             for (Highlighting highlight : text.specialHilights) {
                 if (highlight.getProperties().subtype == HighlightSpecialType.TEXT) {
                     textValue.select(highlight.startPos, highlight.startPos + highlight.len);
@@ -205,7 +228,7 @@ public class TextPanel extends JPanel implements TagEditorPanel {
         if (selEnd > selStart) {
             StringBuilder selected = new StringBuilder(textValue.getSelectedText());
 
-            HighlightedText text = textTag.getFormattedText();
+            HighlightedText text = textTag.getFormattedText(false);
             boolean allUpper = true;
             for (Highlighting highlight : text.specialHilights) {
                 if (highlight.getProperties().subtype == HighlightSpecialType.TEXT) {

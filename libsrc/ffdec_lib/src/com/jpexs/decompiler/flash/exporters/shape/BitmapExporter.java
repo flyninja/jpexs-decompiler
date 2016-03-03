@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -69,13 +69,9 @@ public class BitmapExporter extends ShapeExporterBase {
 
     private final GeneralPath path = new GeneralPath(GeneralPath.WIND_EVEN_ODD);  //For correct intersections display;
 
-    private Paint fillPathPaint;
-
     private Paint fillPaint;
 
     private AffineTransform fillTransform;
-
-    private Paint linePathPaint;
 
     private Paint linePaint;
 
@@ -86,6 +82,8 @@ public class BitmapExporter extends ShapeExporterBase {
     private Stroke lineStroke;
 
     private Stroke defaultStroke;
+
+    private Matrix strokeTransformation;
 
     private class TransformedStroke implements Stroke {
 
@@ -138,9 +136,9 @@ public class BitmapExporter extends ShapeExporterBase {
         }
     }
 
-    public static void export(SWF swf, SHAPE shape, Color defaultColor, SerializableImage image, Matrix transformation, ColorTransform colorTransform) {
+    public static void export(SWF swf, SHAPE shape, Color defaultColor, SerializableImage image, Matrix transformation, Matrix strokeTransformation, ColorTransform colorTransform) {
         BitmapExporter exporter = new BitmapExporter(swf, shape, defaultColor, colorTransform);
-        exporter.exportTo(image, transformation);
+        exporter.exportTo(image, transformation, strokeTransformation);
     }
 
     private BitmapExporter(SWF swf, SHAPE shape, Color defaultColor, ColorTransform colorTransform) {
@@ -149,8 +147,12 @@ public class BitmapExporter extends ShapeExporterBase {
         this.defaultColor = defaultColor;
     }
 
-    private void exportTo(SerializableImage image, Matrix transformation) {
+    private void exportTo(SerializableImage image, Matrix transformation, Matrix strokeTransformation) {
         this.image = image;
+        this.strokeTransformation = strokeTransformation.clone();
+        this.strokeTransformation.scaleX /= SWF.unitDivisor;
+        this.strokeTransformation.scaleY /= SWF.unitDivisor;
+
         graphics = (Graphics2D) image.getGraphics();
         AffineTransform at = transformation.toTransform();
         at.preConcatenate(AffineTransform.getScaleInstance(1 / SWF.unitDivisor, 1 / SWF.unitDivisor));
@@ -184,7 +186,11 @@ public class BitmapExporter extends ShapeExporterBase {
     }
 
     @Override
-    public void endLines() {
+    public void endLines(boolean close) {
+        if (close) {
+            path.closePath();
+        }
+
         finalizePath();
     }
 
@@ -232,7 +238,6 @@ public class BitmapExporter extends ShapeExporterBase {
                     cm = MultipleGradientPaint.CycleMethod.REPEAT;
                 }
 
-                fillPathPaint = null;
                 fillPaint = new LinearGradientPaint(POINT_NEG16384_0, POINT_16384_0, ratiosArr, colorsArr, cm, cstype, IDENTITY_TRANSFORM);
                 fillTransform = matrix.toTransform();
             }
@@ -263,8 +268,6 @@ public class BitmapExporter extends ShapeExporterBase {
                     cm = MultipleGradientPaint.CycleMethod.REPEAT;
                 }
 
-                Color endColor = gradientRecords[gradientRecords.length - 1].color.toColor();
-                fillPathPaint = endColor;
                 fillPaint = new RadialGradientPaint(new java.awt.Point(0, 0), 16384, ratiosArr, colorsArr, cm);
                 fillTransform = matrix.toTransform();
             }
@@ -295,8 +298,6 @@ public class BitmapExporter extends ShapeExporterBase {
                     cm = MultipleGradientPaint.CycleMethod.REPEAT;
                 }
 
-                Color endColor = gradientRecords[gradientRecords.length - 1].color.toColor();
-                fillPathPaint = endColor;
                 fillPaint = new RadialGradientPaint(new java.awt.Point(0, 0), 16384, new java.awt.Point((int) (focalPointRatio * 16384), 0), ratiosArr, colorsArr, cm, cstype, AffineTransform.getTranslateInstance(0, 0));
                 fillTransform = matrix.toTransform();
             }
@@ -311,7 +312,10 @@ public class BitmapExporter extends ShapeExporterBase {
         if (imageTag != null) {
             SerializableImage img = imageTag.getImage();
             if (img != null) {
-                img = colorTransform.apply(img);
+                if (colorTransform != null) {
+                    img = colorTransform.apply(img);
+                }
+
                 fillPaint = new TexturePaint(img.getBufferedImage(), new java.awt.Rectangle(img.getWidth(), img.getHeight()));
                 fillTransform = matrix.toTransform();
             }
@@ -325,9 +329,8 @@ public class BitmapExporter extends ShapeExporterBase {
     }
 
     @Override
-    public void lineStyle(double thickness, RGB color, boolean pixelHinting, String scaleMode, int startCaps, int endCaps, int joints, int miterLimit) {
+    public void lineStyle(double thickness, RGB color, boolean pixelHinting, String scaleMode, int startCaps, int endCaps, int joints, float miterLimit) {
         finalizePath();
-        linePathPaint = null;
         linePaint = null;
         lineTransform = null;
         lineColor = color == null ? null : color.toColor();
@@ -357,13 +360,13 @@ public class BitmapExporter extends ShapeExporterBase {
         }
         switch (scaleMode) {
             case "VERTICAL":
-                thickness *= graphics.getTransform().getScaleY();
+                thickness *= strokeTransformation.scaleY;
                 break;
             case "HORIZONTAL":
-                thickness *= graphics.getTransform().getScaleX();
+                thickness *= strokeTransformation.scaleX;
                 break;
             case "NORMAL":
-                thickness *= Math.max(graphics.getTransform().getScaleX(), graphics.getTransform().getScaleY());
+                thickness *= Math.max(strokeTransformation.scaleX, strokeTransformation.scaleY);
                 break;
         }
 
@@ -379,7 +382,9 @@ public class BitmapExporter extends ShapeExporterBase {
 
         // Do not scale strokes automatically:
         try {
-            lineStroke = new TransformedStroke(lineStroke, graphics.getTransform());
+            AffineTransform t = (AffineTransform) graphics.getTransform().clone();
+            t.translate(-0.5, -0.5);
+            lineStroke = new TransformedStroke(lineStroke, t);
         } catch (NoninvertibleTransformException net) {
             // ignore
         }
@@ -418,7 +423,6 @@ public class BitmapExporter extends ShapeExporterBase {
                     cm = MultipleGradientPaint.CycleMethod.REPEAT;
                 }
 
-                linePathPaint = null;
                 linePaint = new LinearGradientPaint(POINT_NEG16384_0, POINT_16384_0, ratiosArr, colorsArr, cm, cstype, IDENTITY_TRANSFORM);
                 lineTransform = matrix.toTransform();
             }
@@ -441,16 +445,18 @@ public class BitmapExporter extends ShapeExporterBase {
                 Color[] colorsArr = colors.toArray(new Color[colors.size()]);
 
                 MultipleGradientPaint.CycleMethod cm = MultipleGradientPaint.CycleMethod.NO_CYCLE;
-                if (spreadMethod == GRADIENT.SPREAD_PAD_MODE) {
-                    cm = MultipleGradientPaint.CycleMethod.NO_CYCLE;
-                } else if (spreadMethod == GRADIENT.SPREAD_REFLECT_MODE) {
-                    cm = MultipleGradientPaint.CycleMethod.REFLECT;
-                } else if (spreadMethod == GRADIENT.SPREAD_REPEAT_MODE) {
-                    cm = MultipleGradientPaint.CycleMethod.REPEAT;
+                switch (spreadMethod) {
+                    case GRADIENT.SPREAD_PAD_MODE:
+                        cm = MultipleGradientPaint.CycleMethod.NO_CYCLE;
+                        break;
+                    case GRADIENT.SPREAD_REFLECT_MODE:
+                        cm = MultipleGradientPaint.CycleMethod.REFLECT;
+                        break;
+                    case GRADIENT.SPREAD_REPEAT_MODE:
+                        cm = MultipleGradientPaint.CycleMethod.REPEAT;
+                        break;
                 }
 
-                Color endColor = gradientRecords[gradientRecords.length - 1].color.toColor();
-                linePathPaint = endColor;
                 linePaint = new RadialGradientPaint(new java.awt.Point(0, 0), 16384, ratiosArr, colorsArr, cm);
                 lineTransform = matrix.toTransform();
             }
@@ -481,8 +487,6 @@ public class BitmapExporter extends ShapeExporterBase {
                     cm = MultipleGradientPaint.CycleMethod.REPEAT;
                 }
 
-                Color endColor = gradientRecords[gradientRecords.length - 1].color.toColor();
-                linePathPaint = endColor;
                 linePaint = new RadialGradientPaint(new java.awt.Point(0, 0), 16384, new java.awt.Point((int) (focalPointRatio * 16384), 0), ratiosArr, colorsArr, cm, cstype, AffineTransform.getTranslateInstance(0, 0));
                 lineTransform = matrix.toTransform();
             }
@@ -510,10 +514,6 @@ public class BitmapExporter extends ShapeExporterBase {
             graphics.setComposite(AlphaComposite.SrcOver);
             if (fillPaint instanceof MultipleGradientPaint) {
                 AffineTransform oldAf = graphics.getTransform();
-                if (fillPathPaint != null) {
-                    graphics.setPaint(fillPathPaint);
-                }
-                graphics.fill(path);
                 graphics.setClip(path);
                 Matrix inverse = null;
                 try {
@@ -591,10 +591,6 @@ public class BitmapExporter extends ShapeExporterBase {
             graphics.setComposite(AlphaComposite.SrcOver);
             if (linePaint instanceof MultipleGradientPaint) {
                 AffineTransform oldAf = graphics.getTransform();
-                if (linePathPaint != null) {
-                    graphics.setPaint(linePathPaint);
-                }
-                graphics.fill(strokedShape);
                 graphics.setClip(strokedShape);
                 Matrix inverse = null;
                 try {

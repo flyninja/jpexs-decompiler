@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -157,10 +157,10 @@ public class IdentifiersDeobfuscation {
         return sb.toString();
     }
 
-    public void deobfuscateInstanceNames(boolean as3, HashMap<DottedChain, DottedChain> namesMap, RenameType renameType, List<Tag> tags, Map<DottedChain, DottedChain> selected) {
+    public void deobfuscateInstanceNames(boolean as3, HashMap<DottedChain, DottedChain> namesMap, RenameType renameType, Iterable<Tag> tags, Map<DottedChain, DottedChain> selected) {
         for (Tag t : tags) {
             if (t instanceof DefineSpriteTag) {
-                deobfuscateInstanceNames(as3, namesMap, renameType, ((DefineSpriteTag) t).subTags, selected);
+                deobfuscateInstanceNames(as3, namesMap, renameType, ((DefineSpriteTag) t).getTags(), selected);
             }
             if (t instanceof PlaceObjectTypeTag) {
                 PlaceObjectTypeTag po = (PlaceObjectTypeTag) t;

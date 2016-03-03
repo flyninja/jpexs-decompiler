@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -65,7 +65,11 @@ public abstract class DefaultSVGShapeExporter extends ShapeExporterBase {
     }
 
     @Override
-    public void endLines() {
+    public void endLines(boolean close) {
+        if (close) {
+            pathData.append("Z");
+        }
+
         finalizePath();
     }
 
@@ -90,7 +94,7 @@ public abstract class DefaultSVGShapeExporter extends ShapeExporterBase {
     }
 
     @Override
-    public void lineStyle(double thickness, RGB color, boolean pixelHinting, String scaleMode, int startCaps, int endCaps, int joints, int miterLimit) {
+    public void lineStyle(double thickness, RGB color, boolean pixelHinting, String scaleMode, int startCaps, int endCaps, int joints, float miterLimit) {
         finalizePath();
     }
 

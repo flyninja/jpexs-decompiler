@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS
+ *  Copyright (C) 2010-2016 JPEXS
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@ import com.jpexs.decompiler.flash.action.parser.script.ActionScriptLexer;
 import com.jpexs.decompiler.flash.action.parser.script.ParsedSymbol;
 import com.jpexs.decompiler.flash.action.parser.script.SymbolType;
 import com.jpexs.decompiler.flash.configuration.Configuration;
+import com.jpexs.decompiler.flash.ecma.EcmaScript;
 import com.jpexs.decompiler.flash.gui.AppDialog;
 import com.jpexs.decompiler.flash.gui.AppStrings;
 import com.jpexs.decompiler.flash.gui.DebugPanel;
@@ -181,6 +182,12 @@ public class ABCPanel extends JPanel implements ItemListener, SearchListener<ABC
     }
 
     public List<ABCPanelSearchResult> search(final String txt, boolean ignoreCase, boolean regexp, CancellableWorker<Void> worker) {
+        List<String> ignoredClasses = new ArrayList<>();
+        List<String> ignoredNss = new ArrayList<>();
+
+        if (Configuration._ignoreAdditionalFlexClasses.get()) {
+            abc.getSwf().getFlexMainClass(ignoredClasses, ignoredNss);
+        }
         if (txt != null && !txt.isEmpty()) {
             searchPanel.setOptions(ignoreCase, regexp);
             TagTreeModel ttm = (TagTreeModel) mainPanel.tagTree.getModel();
@@ -193,11 +200,24 @@ public class ABCPanel extends JPanel implements ItemListener, SearchListener<ABC
                         ? Pattern.compile(txt, ignoreCase ? (Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE) : 0)
                         : Pattern.compile(Pattern.quote(txt), ignoreCase ? (Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE) : 0);
                 int pos = 0;
+                loop:
                 for (final ScriptPack pack : allpacks) {
                     pos++;
                     if (!pack.isSimple && Configuration.ignoreCLikePackages.get()) {
                         continue;
                     }
+                    if (Configuration._ignoreAdditionalFlexClasses.get()) {
+                        String fullName = pack.getClassPath().packageStr.add(pack.getClassPath().className).toRawString();
+                        if (ignoredClasses.contains(fullName)) {
+                            continue;
+                        }
+                        for (String ns : ignoredNss) {
+                            if (fullName.startsWith(ns + ".")) {
+                                continue loop;
+                            }
+                        }
+                    }
+
                     String workText = AppStrings.translate("work.searching");
                     String decAdd = "";
                     if (!SWF.isCached(pack)) {
@@ -507,14 +527,7 @@ public class ABCPanel extends JPanel implements ItemListener, SearchListener<ABC
                         case VariableType.STRING:
                             return "\"" + Helper.escapeActionScriptString("" + v.value) + "\"";
                         default:
-                            if (v.value instanceof Number) {
-                                String sv = "" + v.value;
-                                if (sv.endsWith(".0")) {
-                                    sv = sv.substring(0, sv.length() - 2);
-                                }
-                                return sv;
-                            }
-                            return "" + v.value;
+                            return EcmaScript.toString(v.value);
                     }
 
             }

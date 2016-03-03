@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS
+ *  Copyright (C) 2010-2016 JPEXS
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ import com.jpexs.decompiler.flash.configuration.Configuration;
 import com.jpexs.decompiler.flash.gui.DebugLogDialog;
 import com.jpexs.decompiler.flash.gui.Main;
 import com.jpexs.decompiler.flash.tags.ABCContainerTag;
+import com.jpexs.decompiler.flash.tags.FileAttributesTag;
 import com.jpexs.decompiler.flash.tags.Tag;
 import com.jpexs.helpers.Helper;
 import java.util.ArrayList;
@@ -100,6 +101,22 @@ public class DebuggerTools {
                         m.namespace_index = a.constants.getNamespaceId(Namespace.KIND_PACKAGE, debuggerPkg, 0, true);
                         m.name_index = a.constants.getStringId("DebugLoader", true);
                         ((Tag) ct).setModified(true);
+                    } else if ("flash.utils.getDefinitionByName".equals(m.getNameWithNamespace(a.constants).toRawString())) {
+                        m.namespace_index = a.constants.getNamespaceId(Namespace.KIND_PACKAGE, debuggerPkg, 0, true);
+                        m.name_index = a.constants.getStringId("debugGetDefinitionByName", true);
+                        ((Tag) ct).setModified(true);
+                    } else if ("flash.utils.getQualifiedClassName".equals(m.getNameWithNamespace(a.constants).toRawString())) {
+                        m.namespace_index = a.constants.getNamespaceId(Namespace.KIND_PACKAGE, debuggerPkg, 0, true);
+                        m.name_index = a.constants.getStringId("debugGetQualifiedClassName", true);
+                        ((Tag) ct).setModified(true);
+                    } else if ("flash.utils.getQualifiedSuperclassName".equals(m.getNameWithNamespace(a.constants).toRawString())) {
+                        m.namespace_index = a.constants.getNamespaceId(Namespace.KIND_PACKAGE, debuggerPkg, 0, true);
+                        m.name_index = a.constants.getStringId("debugGetQualifiedSuperclassName", true);
+                        ((Tag) ct).setModified(true);
+                    } else if ("flash.utils.describeType".equals(m.getNameWithNamespace(a.constants).toRawString())) {
+                        m.namespace_index = a.constants.getNamespaceId(Namespace.KIND_PACKAGE, debuggerPkg, 0, true);
+                        m.name_index = a.constants.getStringId("debugDescribeType", true);
+                        ((Tag) ct).setModified(true);
                     }
                 }
             }
@@ -129,7 +146,7 @@ public class DebuggerTools {
         ScriptPack found = getDebuggerScriptPack(swf);
         if (found != null) {
             ABCContainerTag tag = found.abc.parentTag;
-            swf.tags.remove((Tag) tag);
+            swf.removeTag((Tag) tag);
             swf.getAbcList().remove(tag);
 
             //Change all debugger calls to normal trace / Loader
@@ -188,9 +205,14 @@ public class DebuggerTools {
                     }
                     //Add to target SWF
                     ((Tag) ds).setSwf(swf);
-                    swf.tags.add(swf.tags.indexOf(firstAbc), (Tag) ds);
+                    swf.addTag((Tag) ds, (Tag) firstAbc);
                     swf.getAbcList().add(swf.getAbcList().indexOf(firstAbc), ds);
                     ((Tag) ds).setModified(true);
+
+                    //To allow socket connection to FFDec. Is this safe?
+                    FileAttributesTag ft = swf.getFileAttributes();
+                    ft.useNetwork = true;
+                    ft.setModified(true);
                 }
 
             } catch (Exception ex) {

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -93,7 +93,7 @@ public class SWFSearch {
                 SWF swf = noCheck ? new SWF(pmi) : new SWF(pmi, null, null, null, false, true, true);
                 boolean valid = swf.fileSize > 0
                         && swf.version > 0
-                        && (!swf.tags.isEmpty() || noCheck)
+                        && (!swf.getTags().isEmpty() || noCheck)
                         && swf.version <= SWF.MAX_VERSION;
                 if (valid) {
                     long limit = pmi.getPos();

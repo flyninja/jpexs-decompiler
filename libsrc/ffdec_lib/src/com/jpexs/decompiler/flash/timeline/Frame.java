@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -57,6 +57,10 @@ public class Frame implements TreeItem, Exportable {
     public ShowFrameTag showFrameTag = null; // can be null for the last frame
 
     public boolean layersChanged;
+
+    public String label = null;
+
+    public boolean namedAnchor = false;
 
     public Frame(Timeline timeline, int frame) {
         this.timeline = timeline;

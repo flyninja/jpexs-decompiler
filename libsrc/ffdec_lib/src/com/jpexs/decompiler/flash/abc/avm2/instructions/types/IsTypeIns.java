@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,6 +25,7 @@ import com.jpexs.decompiler.flash.abc.avm2.model.FullMultinameAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.operations.IsTypeAVM2Item;
 import com.jpexs.decompiler.graph.GraphTargetItem;
 import com.jpexs.decompiler.graph.TranslateStack;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -41,7 +42,7 @@ public class IsTypeIns extends InstructionDefinition {
     public void translate(AVM2LocalData localData, TranslateStack stack, AVM2Instruction ins, List<GraphTargetItem> output, String path) {
         int multinameIndex = ins.operands[0];
         GraphTargetItem value = stack.pop();
-        stack.push(new IsTypeAVM2Item(ins, localData.lineStartInstruction, value, new FullMultinameAVM2Item(false, ins, localData.lineStartInstruction, multinameIndex)));
+        stack.push(new IsTypeAVM2Item(ins, localData.lineStartInstruction, value, new FullMultinameAVM2Item(false, ins, localData.lineStartInstruction, multinameIndex, localData.abc.constants.getMultiname(multinameIndex).getName(localData.getConstants(), new ArrayList<>(), true))));
     }
 
     @Override

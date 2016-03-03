@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,7 +40,8 @@ public class ExportTest extends FileTestBase {
     @BeforeClass
     public void init() {
         Configuration.autoDeobfuscate.set(false);
-        Configuration.debugCopy.set(false);
+        Configuration.simplifyExpressions.set(false);
+        Configuration._debugCopy.set(false);
     }
 
     public static final String TESTDATADIR = "testdata/decompile";

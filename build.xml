@@ -48,11 +48,11 @@
         
     </target>
     <target name="-loadversion-private" unless="newversion.type">
-        <property name="version.major" value="7" />
-        <property name="version.minor" value="1" />
-        <property name="version.release" value="2" />
+        <property name="version.major" value="8" />
+        <property name="version.minor" value="0" />
+        <property name="version.release" value="1" />
         <property name="version.major" value="0" />
-        <property name="version.build" value="2" />
+        <property name="version.build" value="3" />
         <!-- <property name="version.revision" value="" /> -->
         <property name="version.debug" value="false" />
         

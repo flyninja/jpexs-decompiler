@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -105,7 +105,7 @@ public class AVM2GraphSource extends GraphSource {
         List<GraphTargetItem> ret = new ArrayList<>();
         ScopeStack newstack = ((AVM2LocalData) localData).scopeStack;
         Reference<GraphSourceItem> lineStartItem = new Reference<>(localData.lineStartInstruction);
-        ConvertOutput co = code.toSourceOutput(lineStartItem, path, part, false, isStatic, scriptIndex, classIndex, localRegs, stack, newstack, abc, body, start, end, localRegNames, fullyQualifiedNames, new boolean[size()], localRegAssigmentIps, refs);
+        ConvertOutput co = code.toSourceOutput(((AVM2LocalData) localData).thisHasDefaultToPrimitive, lineStartItem, path, part, false, isStatic, scriptIndex, classIndex, localRegs, stack, newstack, abc, body, start, end, localRegNames, fullyQualifiedNames, new boolean[size()], localRegAssigmentIps, refs);
         localData.lineStartInstruction = lineStartItem.getVal();
         ret.addAll(co.output);
         return ret;

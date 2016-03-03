@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -12,8 +12,11 @@
  * Lesser General Public License for more details.
  * 
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library. */
+ * License along with this library.
+ */
 package com.jpexs.decompiler.flash.ecma;
+
+import com.jpexs.decompiler.graph.model.Callable;
 
 /**
  *
@@ -21,10 +24,34 @@ package com.jpexs.decompiler.flash.ecma;
  */
 public enum EcmaType {
 
-    NULL,
-    STRING,
-    NUMBER,
-    UNDEFINED,
-    OBJECT,
-    BOOLEAN
+    NULL(null),
+    STRING("String"),
+    NUMBER("Number"),
+    UNDEFINED(null),
+    OBJECT("Object"),
+    BOOLEAN("Boolean");
+
+    private String clsName;
+
+    private EcmaType(String clsName) {
+        this.clsName = clsName;
+    }
+
+    public String getClassName() {
+        return clsName;
+    }
+
+    public Object getProperty(Object val, String propName) {
+        String cls = getClassName();
+        if (cls == null) {
+            return null;
+        }
+        if ("String".equals(cls)) {
+            switch (propName) {
+                case "length":
+                    return EcmaScript.toString(val).length();
+            }
+        }
+        return null;
+    }
 }

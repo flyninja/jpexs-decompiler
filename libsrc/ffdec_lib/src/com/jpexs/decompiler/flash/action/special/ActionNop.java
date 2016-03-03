@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,6 +17,7 @@
 package com.jpexs.decompiler.flash.action.special;
 
 import com.jpexs.decompiler.flash.action.Action;
+import com.jpexs.decompiler.flash.action.LocalDataArea;
 import com.jpexs.decompiler.graph.GraphSourceItem;
 import com.jpexs.decompiler.graph.GraphTargetItem;
 import com.jpexs.decompiler.graph.TranslateStack;
@@ -36,6 +37,11 @@ public class ActionNop extends Action {
     @Override
     public String toString() {
         return "Nop";
+    }
+
+    @Override
+    public boolean execute(LocalDataArea lda) {
+        return true;
     }
 
     @Override

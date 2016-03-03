@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,6 +18,8 @@ package com.jpexs.decompiler.flash.action.swf6;
 
 import com.jpexs.decompiler.flash.BaseLocalData;
 import com.jpexs.decompiler.flash.action.Action;
+import com.jpexs.decompiler.flash.action.ActionScriptObject;
+import com.jpexs.decompiler.flash.action.LocalDataArea;
 import com.jpexs.decompiler.flash.action.model.operations.InstanceOfActionItem;
 import com.jpexs.decompiler.flash.types.annotations.SWFVersion;
 import com.jpexs.decompiler.graph.GraphSourceItem;
@@ -40,6 +42,45 @@ public class ActionInstanceOf extends Action {
     @Override
     public String toString() {
         return "InstanceOf";
+    }
+
+    public static boolean getInstanceOfResult(Object a, Object b) {
+        ActionScriptObject type = (ActionScriptObject) b;
+        ActionScriptObject obj = (ActionScriptObject) a;
+
+        ActionScriptObject pobj = obj;
+
+        if (pobj.getImplementsObjs().contains(type)) {
+            return true;
+        }
+
+        while (pobj.getExtendsObj() != null) {
+            if (pobj.getExtendsObj() == type) {
+                return true;
+            }
+            pobj = (ActionScriptObject) pobj.getExtendsObj();
+            if (pobj.getImplementsObjs().contains(type)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean execute(LocalDataArea lda) {
+        if (lda.stack.size() < 2) {
+            return false;
+        }
+        Object type = lda.stack.pop();
+        Object obj = lda.stack.pop();
+        if (getInstanceOfResult(obj, type)) {
+            lda.stack.push(Boolean.TRUE);
+        } else {
+            lda.stack.push(Boolean.FALSE);
+        }
+
+        return true;
     }
 
     @Override

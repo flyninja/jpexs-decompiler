@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -220,7 +220,7 @@ public abstract class SHAPERECORD implements Cloneable, NeedsCharacters, Seriali
                 Matrix transformation = new Matrix();
                 transformation.translate(px, py);
                 transformation = transformation.concatenate(Matrix.getScaleInstance(ratio));
-                BitmapExporter.export(swf, shape, color, image, transformation, colorTransform);
+                BitmapExporter.export(swf, shape, color, image, transformation, transformation, colorTransform);
 
                 // draw bounding boxes
                 if (DRAW_BOUNDING_BOX) {

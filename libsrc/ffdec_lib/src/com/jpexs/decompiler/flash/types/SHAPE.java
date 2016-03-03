@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,6 +19,7 @@ package com.jpexs.decompiler.flash.types;
 import com.jpexs.decompiler.flash.SWF;
 import com.jpexs.decompiler.flash.exporters.shape.PathExporter;
 import com.jpexs.decompiler.flash.tags.base.NeedsCharacters;
+import com.jpexs.decompiler.flash.types.annotations.SWFArray;
 import com.jpexs.decompiler.flash.types.annotations.SWFType;
 import com.jpexs.decompiler.flash.types.shaperecords.EndShapeRecord;
 import com.jpexs.decompiler.flash.types.shaperecords.SHAPERECORD;
@@ -42,6 +43,7 @@ public class SHAPE implements NeedsCharacters, Serializable {
     @SWFType(value = BasicType.UB, count = 4)
     public int numLineBits;
 
+    @SWFArray(value = "record")
     public List<SHAPERECORD> shapeRecords;
 
     private Shape cachedOutline;
@@ -75,15 +77,22 @@ public class SHAPE implements NeedsCharacters, Serializable {
         return SHAPERECORD.getBounds(shapeRecords);
     }
 
-    public Shape getOutline(SWF swf) {
+    public Shape getOutline(SWF swf, boolean stroked) {
         if (cachedOutline != null) {
             return cachedOutline;
         }
 
-        List<GeneralPath> paths = PathExporter.export(swf, this);
+        List<GeneralPath> strokes = new ArrayList<>();
+        List<GeneralPath> paths = PathExporter.export(swf, this, strokes);
+
         Area area = new Area();
         for (GeneralPath path : paths) {
             area.add(new Area(path));
+        }
+        if (stroked) {
+            for (GeneralPath path : strokes) {
+                area.add(new Area(path));
+            }
         }
 
         cachedOutline = area;

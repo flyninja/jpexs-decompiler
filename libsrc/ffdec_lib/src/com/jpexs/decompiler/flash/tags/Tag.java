@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -84,6 +84,17 @@ public abstract class Tag implements NeedsCharacters, Exportable, Serializable {
     @Internal
     private boolean modified;
 
+    @Internal
+    protected boolean imported = false;
+
+    public void setImported(boolean imported) {
+        this.imported = imported;
+    }
+
+    public boolean isImported() {
+        return imported;
+    }
+
     /**
      * Original tag data
      */
@@ -152,7 +163,7 @@ public abstract class Tag implements NeedsCharacters, Exportable, Serializable {
         if (deep) {
             if (this instanceof DefineSpriteTag) {
                 DefineSpriteTag sprite = (DefineSpriteTag) this;
-                for (Tag subTag : sprite.subTags) {
+                for (Tag subTag : sprite.getTags()) {
                     subTag.setSwf(swf);
                 }
             }
@@ -400,7 +411,7 @@ public abstract class Tag implements NeedsCharacters, Exportable, Serializable {
      * @throws IOException
      */
     public void writeTag(SWFOutputStream sos) throws IOException {
-        if (Configuration.debugCopy.get() || isModified()) {
+        if (Configuration._debugCopy.get() || isModified()) {
             byte[] newData = getData();
             byte[] newHeaderData = getHeader(newData.length);
             sos.write(newHeaderData);
@@ -424,6 +435,10 @@ public abstract class Tag implements NeedsCharacters, Exportable, Serializable {
         TagStub copy = new TagStub(swf, getId(), "Unresolved", getOriginalRange(), tagDataStream);
         copy.forceWriteAsLong = forceWriteAsLong;
         return SWFInputStream.resolveTag(copy, 0, false, true, false);
+    }
+
+    public boolean canUndo() {
+        return originalRange != null && isModified();
     }
 
     public void undo() throws InterruptedException, IOException {
@@ -462,7 +477,7 @@ public abstract class Tag implements NeedsCharacters, Exportable, Serializable {
     public byte[] getData() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         OutputStream os = baos;
-        if (Configuration.debugCopy.get()) {
+        if (Configuration._debugCopy.get()) {
             byte[] originalData = getOriginalData();
             if (originalData != null) {
                 os = new CopyOutputStream(os, new ByteArrayInputStream(getOriginalData()));
@@ -534,8 +549,9 @@ public abstract class Tag implements NeedsCharacters, Exportable, Serializable {
     }
 
     public void setModified(boolean value) {
+        boolean oldValue = modified;
         modified = value;
-        if (value) {
+        if (value && oldValue != value) {
             informListeners();
         }
     }
@@ -566,6 +582,10 @@ public abstract class Tag implements NeedsCharacters, Exportable, Serializable {
     @Override
     public boolean isModified() {
         return modified;
+    }
+
+    public boolean isReadOnly() {
+        return isImported();
     }
 
     @Override
@@ -607,7 +627,7 @@ public abstract class Tag implements NeedsCharacters, Exportable, Serializable {
     }
 
     public void getDependentCharacters(Set<Integer> dependent) {
-        for (Tag tag : swf.tags) {
+        for (Tag tag : swf.getTags()) {
             if (tag instanceof CharacterTag) {
                 Set<Integer> needed = new HashSet<>();
                 tag.getNeededCharactersDeep(needed);

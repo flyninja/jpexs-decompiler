@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,6 +17,7 @@
 package com.jpexs.decompiler.graph.model;
 
 import com.jpexs.decompiler.flash.SourceGeneratorLocalData;
+import com.jpexs.decompiler.flash.configuration.Configuration;
 import com.jpexs.decompiler.flash.helpers.GraphTextWriter;
 import com.jpexs.decompiler.graph.CompilationException;
 import com.jpexs.decompiler.graph.GraphSourceItem;
@@ -49,11 +50,11 @@ public class DuplicateItem extends GraphTargetItem implements SimpleValue {
 
     @Override
     public GraphTextWriter appendTo(GraphTextWriter writer, LocalData localData) throws InterruptedException {
-        if ((value instanceof SimpleValue) && (((SimpleValue) value).isSimpleValue())) {
-            return value.appendTo(writer, localData);
+        if (((value instanceof SimpleValue) && (((SimpleValue) value).isSimpleValue())) || !Configuration.displayDupInstructions.get()) {
+            return value.appendTry(writer, localData);
         }
         writer.append("§§dup(");
-        value.appendTo(writer, localData);
+        value.appendTry(writer, localData);
         return writer.append(")");
     }
 
@@ -102,8 +103,13 @@ public class DuplicateItem extends GraphTargetItem implements SimpleValue {
     }
 
     @Override
+    public GraphTargetItem simplify(String implicitCoerce) {
+        return this;
+    }
+
+    @Override
     public GraphTargetItem returnType() {
-        return TypeItem.UNBOUNDED;
+        return value.returnType();
     }
 
     /*@Override

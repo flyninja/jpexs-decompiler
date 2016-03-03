@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,6 +27,7 @@ import com.jpexs.decompiler.graph.GraphTargetItem;
 import com.jpexs.decompiler.graph.SourceGenerator;
 import com.jpexs.decompiler.graph.TypeItem;
 import com.jpexs.decompiler.graph.model.LocalData;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -49,13 +50,11 @@ public class LocalRegAVM2Item extends AVM2Item {
         this.regIndex = regIndex;
         if (computedValue == null) {
             computedResult = null;
+        } else if (computedValue.isCompileTime()) {
+            computedResult = computedValue.getResult();
+            isCT = true;
         } else {
-            if (computedValue.isCompileTime()) {
-                computedResult = computedValue.getResult();
-                isCT = true;
-            } else {
-                computedResult = null;
-            }
+            computedResult = null;
         }
         this.computedValue = computedValue;
     }
@@ -81,17 +80,31 @@ public class LocalRegAVM2Item extends AVM2Item {
 
     @Override
     public Object getResult() {
+        if (computedValue == null) {
+            return null;
+        }
         return computedValue.getResult();
     }
 
     @Override
     public Double getResultAsNumber() {
+        if (computedValue == null) {
+            return null;
+        }
         return computedValue.getResultAsNumber();
     }
 
     @Override
     public boolean isCompileTime(Set<GraphTargetItem> dependencies) {
-        return computedValue instanceof UndefinedAVM2Item;
+        return (computedValue instanceof UndefinedAVM2Item);
+    }
+
+    @Override
+    public boolean isConvertedCompileTime(Set<GraphTargetItem> dependencies) {
+        if (computedValue == null) {
+            return false;
+        }
+        return ((computedValue instanceof ThisAVM2Item) && computedValue.isConvertedCompileTime(dependencies));
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -54,6 +54,7 @@ import com.jpexs.decompiler.graph.model.AndItem;
 import com.jpexs.decompiler.graph.model.BreakItem;
 import com.jpexs.decompiler.graph.model.CommaExpressionItem;
 import com.jpexs.decompiler.graph.model.ContinueItem;
+import com.jpexs.decompiler.graph.model.DefaultItem;
 import com.jpexs.decompiler.graph.model.DoWhileItem;
 import com.jpexs.decompiler.graph.model.DuplicateItem;
 import com.jpexs.decompiler.graph.model.FalseItem;
@@ -61,6 +62,8 @@ import com.jpexs.decompiler.graph.model.ForItem;
 import com.jpexs.decompiler.graph.model.IfItem;
 import com.jpexs.decompiler.graph.model.NotItem;
 import com.jpexs.decompiler.graph.model.OrItem;
+import com.jpexs.decompiler.graph.model.PopItem;
+import com.jpexs.decompiler.graph.model.PushItem;
 import com.jpexs.decompiler.graph.model.SwitchItem;
 import com.jpexs.decompiler.graph.model.TernarOpItem;
 import com.jpexs.decompiler.graph.model.TrueItem;
@@ -319,29 +322,37 @@ public class ActionSourceGenerator implements SourceGenerator {
         List<List<Action>> caseCmds = new ArrayList<>();
         List<List<List<Action>>> caseExprsAll = new ArrayList<>();
 
+        int defaultPos = -1;
+
         loopm:
         for (int m = 0; m < item.caseValues.size(); m++) {
             List<List<Action>> caseExprs = new ArrayList<>();
             List<ActionIf> caseIfsOne = new ArrayList<>();
             int mapping = item.valuesMapping.get(m);
+
             for (; m < item.caseValues.size(); m++) {
                 int newmapping = item.valuesMapping.get(m);
                 if (newmapping != mapping) {
                     m--;
                     break;
                 }
-                List<Action> curCaseExpr = generateToActionList(localData, item.caseValues.get(m));
-                caseExprs.add(curCaseExpr);
-                if (firstCase) {
-                    curCaseExpr.add(0, new ActionStoreRegister(exprReg));
+
+                if (item.caseValues.get(m) instanceof DefaultItem) {
+                    defaultPos = caseIfs.size();
                 } else {
-                    curCaseExpr.add(0, new ActionPush(new RegisterNumber(exprReg)));
+                    List<Action> curCaseExpr = generateToActionList(localData, item.caseValues.get(m));
+                    caseExprs.add(curCaseExpr);
+                    if (firstCase) {
+                        curCaseExpr.add(0, new ActionStoreRegister(exprReg));
+                    } else {
+                        curCaseExpr.add(0, new ActionPush(new RegisterNumber(exprReg)));
+                    }
+                    curCaseExpr.add(new ActionStrictEquals());
+                    ActionIf aif = new ActionIf(0);
+                    caseIfsOne.add(aif);
+                    curCaseExpr.add(aif);
+                    ret.addAll(curCaseExpr);
                 }
-                curCaseExpr.add(new ActionStrictEquals());
-                ActionIf aif = new ActionIf(0);
-                caseIfsOne.add(aif);
-                curCaseExpr.add(aif);
-                ret.addAll(curCaseExpr);
                 firstCase = false;
             }
             caseExprsAll.add(caseExprs);
@@ -349,16 +360,12 @@ public class ActionSourceGenerator implements SourceGenerator {
             List<Action> caseCmd = generateToActionList(localData, item.caseCommands.get(mapping));
             caseCmds.add(caseCmd);
         }
+
         ActionJump defJump = new ActionJump(0);
         ret.add(defJump);
-        List<Action> defCmd = new ArrayList<>();
-        if (!item.defaultCommands.isEmpty()) {
-            defCmd = generateToActionList(localData, item.defaultCommands);
-        }
         for (List<Action> caseCmd : caseCmds) {
             ret.addAll(caseCmd);
         }
-        ret.addAll(defCmd);
 
         List<List<Integer>> exprLengths = new ArrayList<>();
         for (List<List<Action>> caseExprs : caseExprsAll) {
@@ -372,7 +379,6 @@ public class ActionSourceGenerator implements SourceGenerator {
         for (List<Action> caseCmd : caseCmds) {
             caseLengths.add(Action.actionsToBytes(caseCmd, false, SWF.DEFAULT_VERSION).length);
         }
-        int defLength = Action.actionsToBytes(defCmd, false, SWF.DEFAULT_VERSION).length;
 
         for (int i = 0; i < caseIfs.size(); i++) {
             for (int c = 0; c < caseIfs.get(i).size(); c++) {
@@ -394,7 +400,9 @@ public class ActionSourceGenerator implements SourceGenerator {
         }
         int defJmpPos = 0;
         for (int i = 0; i < caseIfs.size(); i++) {
-            defJmpPos += caseLengths.get(i);
+            if (defaultPos == -1 || i < defaultPos) {
+                defJmpPos += caseLengths.get(i);
+            }
         }
 
         defJump.setJumpOffset(defJmpPos);
@@ -404,7 +412,6 @@ public class ActionSourceGenerator implements SourceGenerator {
             caseCmdsAll.addAll(caseCmds.get(i));
             breakOffset += caseLengths.get(i);
         }
-        breakOffset += defLength;
         fixLoop(caseCmdsAll, breakOffset);
         return ret;
     }
@@ -802,5 +809,17 @@ public class ActionSourceGenerator implements SourceGenerator {
         List<GraphSourceItem> ret = item.toSource(localData, this);
         ret.add(new ActionPop());
         return ret;
+    }
+
+    @Override
+    public List<GraphSourceItem> generate(SourceGeneratorLocalData localData, PushItem item) throws CompilationException {
+        return item.value.toSource(localData, this);
+    }
+
+    @Override
+    public List<GraphSourceItem> generate(SourceGeneratorLocalData localData, PopItem item) throws CompilationException {
+        List<GraphSourceItem> ret = new ArrayList<>();
+        return ret;
+
     }
 }

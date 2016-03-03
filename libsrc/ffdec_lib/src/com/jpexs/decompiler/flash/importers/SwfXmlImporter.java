@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -142,6 +142,7 @@ public class SwfXmlImporter {
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             Document doc = docBuilder.parse(new InputSource(new StringReader(xml)));
             processElement(doc.getDocumentElement(), swf, swf, null);
+            swf.clearAllCache();
         } catch (ParserConfigurationException | SAXException ex) {
             logger.log(Level.SEVERE, null, ex);
         }

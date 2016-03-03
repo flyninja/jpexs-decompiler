@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 JPEXS
+ * Copyright (C) 2010-2016 JPEXS
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,42 +22,28 @@ import com.jpexs.debugger.flash.messages.in.InConstantPool;
 import com.jpexs.debugger.flash.messages.in.InFrame;
 import com.jpexs.decompiler.flash.gui.DebuggerHandler.BreakListener;
 import com.jpexs.decompiler.flash.gui.abc.ABCPanel;
-import de.hameister.treetable.MyAbstractTreeTableModel;
 import de.hameister.treetable.MyTreeTable;
 import de.hameister.treetable.MyTreeTableModel;
-import de.hameister.treetable.MyTreeTableModelAdapter;
-import de.hameister.treetable.MyTreeTableSelectionModel;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
-import javax.swing.plaf.basic.BasicTableUI;
-import javax.swing.plaf.basic.BasicTreeUI;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.TreePath;
-import javax.swing.tree.TreeSelectionModel;
 
 /**
  *
@@ -142,8 +128,8 @@ public class DebugPanel extends JPanel {
          debug.watch.add.readwrite = Read+Write
 
          error.debug.watch.add = Cannot add watch to this variable.
-        
-        
+
+
          MouseAdapter watchHandler = new MouseAdapter() {
 
          @Override
@@ -325,12 +311,12 @@ public class DebugPanel extends JPanel {
                         safeSetTreeModel(debugScopeTable, new ABCPanel.VariablesTableModel(debugScopeTable, f.scopeChain, f.scopeChainFrameIds));
 
                         /*TableModelListener refreshListener = new TableModelListener() {
-                            @Override
-                            public void tableChanged(TableModelEvent e) {
-                                Main.getDebugHandler().refreshFrame();
-                                refresh();
-                            }
-                        };*/
+                         @Override
+                         public void tableChanged(TableModelEvent e) {
+                         Main.getDebugHandler().refreshFrame();
+                         refresh();
+                         }
+                         };*/
                         TreeModelListener refreshListener = new TreeModelListener() {
                             @Override
                             public void treeNodesChanged(TreeModelEvent e) {

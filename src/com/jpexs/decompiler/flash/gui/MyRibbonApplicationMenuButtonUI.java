@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS
+ *  Copyright (C) 2010-2016 JPEXS
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.LinearGradientPaint;
 import java.awt.MultipleGradientPaint;
 import java.awt.RadialGradientPaint;
 import java.awt.RenderingHints;
@@ -85,13 +86,33 @@ public class MyRibbonApplicationMenuButtonUI extends BasicRibbonApplicationMenuB
                     g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                     SubstanceSkin skin = SubstanceLookAndFeel.getCurrentSkin();
-                    g2.setPaint(new RadialGradientPaint(getIconWidth() / 2.0f, getIconHeight() / 2.0f, getIconWidth() / 2.0f, new float[]{0.32f, 0.84f, 1f}, new Color[]{
-                        skin.getColorScheme(DecorationAreaType.SECONDARY_TITLE_PANE, ColorSchemeAssociationKind.HIGHLIGHT, ComponentState.ENABLED).shiftBackground(Color.white, 0.5).getUltraLightColor(),
-                        skin.getColorScheme(DecorationAreaType.SECONDARY_TITLE_PANE, ColorSchemeAssociationKind.FILL, ComponentState.ENABLED).getMidColor(),
-                        skin.getColorScheme(DecorationAreaType.SECONDARY_TITLE_PANE, ColorSchemeAssociationKind.BORDER, ComponentState.ENABLED).getUltraDarkColor()
-                    }, MultipleGradientPaint.CycleMethod.NO_CYCLE));
+
+                    g2.setPaint(new LinearGradientPaint(0, 0, 0, getIconHeight(), new float[]{0f, 1f}, new Color[]{
+                        Color.white,
+                        Color.black
+                    }, MultipleGradientPaint.CycleMethod.NO_CYCLE
+                    ));
+
                     Shape s = new Ellipse2D.Double(x, y, getIconWidth(), getIconHeight());
                     g2.fill(s);
+
+                    float border = (0.0625f * getIconWidth());
+                    float wborder = (0.00625f * getIconWidth());
+
+                    g2.setPaint(Color.white);
+                    s = new Ellipse2D.Double(x + border, y + border, getIconWidth() - 2 * border, getIconHeight() - 2 * border);
+                    g2.fill(s);
+
+                    g2.setPaint(new RadialGradientPaint(getIconWidth() / 2.0f, getIconHeight() / 2.0f, getIconWidth() / 2.0f - border - wborder, new float[]{0f, 0.42236024f, 0.69565213f, 0.97722566f, 1f}, new Color[]{
+                        new Color(0xff, 0xff, 0xff),
+                        new Color(0xff, 0xff, 0xff),
+                        new Color(0xec, 0xec, 0xec),
+                        new Color(0xb6, 0xb6, 0xb6),
+                        new Color(0xff, 0xff, 0xff)
+                    }, MultipleGradientPaint.CycleMethod.NO_CYCLE));
+                    s = new Ellipse2D.Double(x + border + wborder, y + border + wborder, getIconWidth() - 2 * border - 2 * wborder, getIconHeight() - 2 * border - 2 * wborder);
+                    g2.fill(s);
+
                     g2.setPaint(skin.getEnabledColorScheme(DecorationAreaType.PRIMARY_TITLE_PANE).getMidColor());
                     super.paintIcon(c, g, x, y);
                 }
@@ -106,12 +127,34 @@ public class MyRibbonApplicationMenuButtonUI extends BasicRibbonApplicationMenuB
                     g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                     SubstanceSkin skin = SubstanceLookAndFeel.getCurrentSkin();
-                    g2.setPaint(new RadialGradientPaint(getIconWidth() / 2, getIconHeight() / 2, getIconWidth() / 2, new float[]{0.32f, 0.84f, 1f}, new Color[]{
-                        skin.getColorScheme(DecorationAreaType.SECONDARY_TITLE_PANE, ColorSchemeAssociationKind.HIGHLIGHT, ComponentState.ROLLOVER_UNSELECTED)/*.shiftBackground(Color.white, 0.8)*/.getUltraLightColor(),
-                        skin.getColorScheme(DecorationAreaType.SECONDARY_TITLE_PANE, ColorSchemeAssociationKind.FILL, ComponentState.ROLLOVER_UNSELECTED).getMidColor(),
-                        skin.getColorScheme(DecorationAreaType.SECONDARY_TITLE_PANE, ColorSchemeAssociationKind.BORDER, ComponentState.ROLLOVER_UNSELECTED)/*.shiftBackground(new Color(0x7c, 0x7c, 0x7c), 0.8)*/.getUltraDarkColor()
+                    /*Color lightColor = skin.getColorScheme(DecorationAreaType.SECONDARY_TITLE_PANE, ColorSchemeAssociationKind.HIGHLIGHT, ComponentState.ROLLOVER_UNSELECTED).
+                    getUltraLightColor();
+                    Color midColor = skin.getColorScheme(DecorationAreaType.SECONDARY_TITLE_PANE, ColorSchemeAssociationKind.FILL, ComponentState.ROLLOVER_UNSELECTED).getMidColor();
+                    Color darkColor = skin.getColorScheme(DecorationAreaType.SECONDARY_TITLE_PANE, ColorSchemeAssociationKind.BORDER, ComponentState.ROLLOVER_UNSELECTED).getUltraDarkColor();
+                     */
+                    g2.setPaint(new LinearGradientPaint(0, 0, 0, getIconHeight(), new float[]{0f, 1f}, new Color[]{
+                        Color.white,
+                        Color.black
                     }, MultipleGradientPaint.CycleMethod.NO_CYCLE));
+
                     Shape s = new Ellipse2D.Double(x, y, getIconWidth(), getIconHeight());
+                    g2.fill(s);
+
+                    float border = (0.0625f * getIconWidth());
+                    float wborder = (0.00625f * getIconWidth());
+
+                    g2.setPaint(Color.white);
+                    s = new Ellipse2D.Double(x + border, y + border, getIconWidth() - 2 * border, getIconHeight() - 2 * border);
+                    g2.fill(s);
+
+                    g2.setPaint(new RadialGradientPaint(getIconWidth() / 2.0f, getIconHeight() / 2.0f, getIconWidth() / 2.0f - border - wborder, new float[]{0f, 0.42236024f, 0.69565213f, 0.97722566f, 1f}, new Color[]{
+                        new Color(0xff, 0xff, 0xff),
+                        new Color(0xff, 0xff, 0xff),
+                        new Color(0xec, 0xec, 0xec),
+                        new Color(0xb6, 0xb6, 0xb6),
+                        new Color(0xff, 0xff, 0xff)
+                    }, MultipleGradientPaint.CycleMethod.NO_CYCLE));
+                    s = new Ellipse2D.Double(x + border + wborder, y + border + wborder, getIconWidth() - 2 * border - 2 * wborder, getIconHeight() - 2 * border - 2 * wborder);
                     g2.fill(s);
                     super.paintIcon(c, g, x, y);
                 }
@@ -126,13 +169,36 @@ public class MyRibbonApplicationMenuButtonUI extends BasicRibbonApplicationMenuB
                     g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                     SubstanceSkin skin = SubstanceLookAndFeel.getCurrentSkin();
-                    g2.setPaint(new RadialGradientPaint(getIconWidth() / 2, getIconHeight() / 2, getIconWidth() / 2, new float[]{0.2f, 0.5f, 0.8f}, new Color[]{
-                        skin.getColorScheme(DecorationAreaType.SECONDARY_TITLE_PANE, ColorSchemeAssociationKind.FILL, ComponentState.ROLLOVER_SELECTED).getUltraLightColor(),
-                        skin.getColorScheme(DecorationAreaType.SECONDARY_TITLE_PANE, ColorSchemeAssociationKind.FILL, ComponentState.ROLLOVER_SELECTED).getMidColor(),
-                        skin.getColorScheme(DecorationAreaType.SECONDARY_TITLE_PANE, ColorSchemeAssociationKind.FILL, ComponentState.ROLLOVER_SELECTED).shiftBackground(Color.black, 0.7).getUltraDarkColor()
+
+                    /*Color lightColor = skin.getColorScheme(DecorationAreaType.SECONDARY_TITLE_PANE, ColorSchemeAssociationKind.FILL, ComponentState.ROLLOVER_SELECTED).getUltraLightColor();
+                    Color midColor = skin.getColorScheme(DecorationAreaType.SECONDARY_TITLE_PANE, ColorSchemeAssociationKind.FILL, ComponentState.ROLLOVER_SELECTED).getMidColor();
+                    Color darkColor = skin.getColorScheme(DecorationAreaType.SECONDARY_TITLE_PANE, ColorSchemeAssociationKind.FILL, ComponentState.ROLLOVER_SELECTED).shiftBackground(Color.black, 0.7).getUltraDarkColor();
+                     */
+                    g2.setPaint(new LinearGradientPaint(0, 0, 0, getIconHeight(), new float[]{0f, 1f}, new Color[]{
+                        Color.white,
+                        Color.black
                     }, MultipleGradientPaint.CycleMethod.NO_CYCLE));
+
                     Shape s = new Ellipse2D.Double(x, y, getIconWidth(), getIconHeight());
                     g2.fill(s);
+
+                    float border = (0.0625f * getIconWidth());
+                    float wborder = (0.00625f * getIconWidth());
+
+                    g2.setPaint(Color.white);
+                    s = new Ellipse2D.Double(x + border, y + border, getIconWidth() - 2 * border, getIconHeight() - 2 * border);
+                    g2.fill(s);
+
+                    g2.setPaint(new RadialGradientPaint(getIconWidth() / 2.0f, getIconHeight() / 2.0f, getIconWidth() / 2.0f - border - wborder, new float[]{0f, 0.1f, 0.5f, 0.97722566f, 1f}, new Color[]{
+                        new Color(0xff, 0xff, 0xff),
+                        new Color(0xff, 0xff, 0xff),
+                        new Color(0xec, 0xec, 0xec),
+                        new Color(0xb6, 0xb6, 0xb6),
+                        new Color(0xff, 0xff, 0xff)
+                    }, MultipleGradientPaint.CycleMethod.NO_CYCLE));
+                    s = new Ellipse2D.Double(x + border + wborder, y + border + wborder, getIconWidth() - 2 * border - 2 * wborder, getIconHeight() - 2 * border - 2 * wborder);
+                    g2.fill(s);
+
                     AffineTransform origt = g2.getTransform();
                     AffineTransform t = (AffineTransform) origt.clone();
                     t.translate(-getIconWidth() / 2, -getIconHeight() / 2);

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -111,7 +111,7 @@ public abstract class StaticTextTag extends TextTag {
             }
         }
 
-        if (Configuration.debugCopy.get()) {
+        if (Configuration._debugCopy.get()) {
             glyphBits = Math.max(glyphBits, this.glyphBits);
             advanceBits = Math.max(advanceBits, this.advanceBits);
         }
@@ -227,7 +227,7 @@ public abstract class StaticTextTag extends TextTag {
     }
 
     @Override
-    public HighlightedText getFormattedText() {
+    public HighlightedText getFormattedText(boolean ignoreLetterSpacing) {
         FontTag fnt = null;
         HighlightedTextWriter writer = new HighlightedTextWriter(Configuration.getCodeFormatting(), true);
         writer.append("[").newLine();
@@ -250,6 +250,7 @@ public abstract class StaticTextTag extends TextTag {
             writer.append("rotateskew1 ").append(textMatrix.rotateSkew1).newLine();
         }
         writer.append("]");
+        int textHeight = 12;
         for (TEXTRECORD rec : textRecords) {
             if (rec.styleFlagsHasFont || rec.styleFlagsHasColor || rec.styleFlagsHasXOffset || rec.styleFlagsHasYOffset) {
                 writer.append("[").newLine();
@@ -260,9 +261,10 @@ public abstract class StaticTextTag extends TextTag {
                     }
                     writer.append("font ").append(rec.fontId).newLine();
                     writer.append("height ").append(rec.textHeight).newLine();
+                    textHeight = rec.textHeight;
                 }
-                if (fnt != null) {
-                    int letterSpacing = detectLetterSpacing(rec, fnt, rec.textHeight);
+                if (fnt != null && !ignoreLetterSpacing) {
+                    int letterSpacing = detectLetterSpacing(rec, fnt, textHeight);
                     if (letterSpacing != 0) {
                         writer.append("letterspacing ").append(letterSpacing).newLine();
                     }
@@ -511,12 +513,10 @@ public abstract class StaticTextTag extends TextTag {
                                 tr.styleFlagsHasColor = true;
                                 color = null;
                             }
-                        } else {
-                            if (colorA != null) {
-                                tr.textColorA = colorA;
-                                tr.styleFlagsHasColor = true;
-                                colorA = null;
-                            }
+                        } else if (colorA != null) {
+                            tr.textColorA = colorA;
+                            tr.styleFlagsHasColor = true;
+                            colorA = null;
                         }
                         if (x != null) {
                             tr.xOffset = x;
@@ -652,7 +652,7 @@ public abstract class StaticTextTag extends TextTag {
     }
 
     @Override
-    public void toImage(int frame, int time, int ratio, RenderContext renderContext, SerializableImage image, Matrix transformation, ColorTransform colorTransform) {
+    public void toImage(int frame, int time, int ratio, RenderContext renderContext, SerializableImage image, boolean isClip, Matrix transformation, Matrix strokeTransformation, Matrix absoluteTransformation, ColorTransform colorTransform) {
         staticTextToImage(swf, textRecords, getTextNum(), image, textMatrix, transformation, colorTransform);
         /*try {
          TextTag originalTag = (TextTag) getOriginalTag();
@@ -672,6 +672,6 @@ public abstract class StaticTextTag extends TextTag {
 
     @Override
     public void toHtmlCanvas(StringBuilder result, double unitDivisor) {
-        staticTextToHtmlCanvas(unitDivisor, swf, textRecords, getTextNum(), result, textBounds, textMatrix, new ColorTransform());
+        staticTextToHtmlCanvas(unitDivisor, swf, textRecords, getTextNum(), result, textBounds, textMatrix, null);
     }
 }

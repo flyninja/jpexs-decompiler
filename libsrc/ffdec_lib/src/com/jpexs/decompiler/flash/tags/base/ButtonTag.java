@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,11 +16,13 @@
  */
 package com.jpexs.decompiler.flash.tags.base;
 
+import com.jpexs.decompiler.flash.ReadOnlyTagList;
 import com.jpexs.decompiler.flash.SWF;
 import com.jpexs.decompiler.flash.exporters.commonshape.Matrix;
 import com.jpexs.decompiler.flash.exporters.commonshape.SVGExporter;
 import com.jpexs.decompiler.flash.tags.DefineButtonSoundTag;
 import com.jpexs.decompiler.flash.tags.Tag;
+import com.jpexs.decompiler.flash.timeline.Timeline;
 import com.jpexs.decompiler.flash.timeline.Timelined;
 import com.jpexs.decompiler.flash.types.BUTTONRECORD;
 import com.jpexs.decompiler.flash.types.ColorTransform;
@@ -32,6 +34,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -47,6 +50,12 @@ public abstract class ButtonTag extends CharacterTag implements DrawableTag, Tim
 
     public static int FRAME_HITTEST = 3;
 
+    private Timeline timeline;
+
+    private boolean isSingleFrameInitialized;
+
+    private boolean isSingleFrame;
+
     public ButtonTag(SWF swf, int id, String name, ByteArrayRange data) {
         super(swf, id, name, data);
     }
@@ -54,6 +63,18 @@ public abstract class ButtonTag extends CharacterTag implements DrawableTag, Tim
     public abstract List<BUTTONRECORD> getRecords();
 
     public abstract boolean trackAsMenu();
+
+    @Override
+    public void getNeededCharacters(Set<Integer> needed) {
+        for (BUTTONRECORD r : getRecords()) {
+            needed.add(r.characterId);
+        }
+
+        DefineButtonSoundTag sounds = getSounds();
+        if (sounds != null) {
+            sounds.getNeededCharacters(needed);
+        }
+    }
 
     @Override
     public RECT getRect() {
@@ -66,34 +87,95 @@ public abstract class ButtonTag extends CharacterTag implements DrawableTag, Tim
     }
 
     @Override
-    public Shape getOutline(int frame, int time, int ratio, RenderContext renderContext, Matrix transformation) {
-        return getTimeline().getOutline(frame, time, ratio, renderContext, transformation);
+    public Shape getOutline(int frame, int time, int ratio, RenderContext renderContext, Matrix transformation, boolean stroked) {
+        return getTimeline().getOutline(frame, time, renderContext, transformation, stroked);
     }
 
     @Override
-    public void toImage(int frame, int time, int ratio, RenderContext renderContext, SerializableImage image, Matrix transformation, ColorTransform colorTransform) {
-        SWF.frameToImage(getTimeline(), frame, time, renderContext, image, transformation, colorTransform);
+    public void toImage(int frame, int time, int ratio, RenderContext renderContext, SerializableImage image, boolean isClip, Matrix transformation, Matrix strokeTransformation, Matrix absoluteTransformation, ColorTransform colorTransform) {
+        getTimeline().toImage(frame, time, renderContext, image, isClip, transformation, strokeTransformation, absoluteTransformation, colorTransform);
     }
 
     @Override
     public void toSVG(SVGExporter exporter, int ratio, ColorTransform colorTransform, int level, double zoom) throws IOException {
-        SWF.frameToSvg(getTimeline(), 0, 0, null, 0, exporter, colorTransform, level + 1, zoom);
+        getTimeline().toSVG(0, 0, null, 0, exporter, colorTransform, level + 1, zoom);
     }
 
     public DefineButtonSoundTag getSounds() {
-        for (Tag t : swf.tags) {
-            if (t instanceof DefineButtonSoundTag) {
-                DefineButtonSoundTag st = (DefineButtonSoundTag) t;
-                if (st.buttonId == getCharacterId()) {
-                    return st;
+        List<CharacterIdTag> characterIdTags = swf.getCharacterIdTags(getCharacterId());
+        if (characterIdTags != null) {
+            for (CharacterIdTag t : characterIdTags) {
+                if (t instanceof DefineButtonSoundTag) {
+                    DefineButtonSoundTag st = (DefineButtonSoundTag) t;
+                    if (st.buttonId == getCharacterId()) {
+                        return st;
+                    }
                 }
             }
         }
+
         return null;
     }
 
     @Override
     public void toHtmlCanvas(StringBuilder result, double unitDivisor) {
         getTimeline().toHtmlCanvas(result, unitDivisor, Arrays.asList(0)); //TODO: handle states?
+    }
+
+    @Override
+    public boolean isSingleFrame() {
+        if (!isSingleFrameInitialized) {
+            initialiteIsSingleFrame();
+        }
+        return isSingleFrame;
+    }
+
+    private synchronized void initialiteIsSingleFrame() {
+        if (!isSingleFrameInitialized) {
+            isSingleFrame = getTimeline().isSingleFrame();
+            isSingleFrameInitialized = true;
+        }
+    }
+
+    @Override
+    public Timeline getTimeline() {
+        if (timeline != null) {
+            return timeline;
+        }
+
+        timeline = new Timeline(swf, this, getCharacterId(), getRect());
+        initTimeline(timeline);
+        return timeline;
+    }
+
+    @Override
+    public void resetTimeline() {
+        if (timeline != null) {
+            timeline.reset(swf, this, getCharacterId(), getRect());
+            initTimeline(timeline);
+        }
+    }
+
+    protected abstract void initTimeline(Timeline timeline);
+
+    @Override
+    public ReadOnlyTagList getTags() {
+        return ReadOnlyTagList.EMPTY;
+    }
+
+    @Override
+    public void removeTag(int index) {
+    }
+
+    @Override
+    public void removeTag(Tag tag) {
+    }
+
+    @Override
+    public void addTag(Tag tag) {
+    }
+
+    @Override
+    public void addTag(int index, Tag tag) {
     }
 }

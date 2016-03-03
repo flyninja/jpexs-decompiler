@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -153,7 +153,7 @@ public abstract class FontTag extends CharacterTag implements AloneTag, Drawable
         return fontStyle;
     }
 
-    public abstract String getCharacters(List<Tag> tags);
+    public abstract String getCharacters();
 
     @Override
     public String getName() {
@@ -209,7 +209,7 @@ public abstract class FontTag extends CharacterTag implements AloneTag, Drawable
     }
 
     protected void shiftGlyphIndices(int fontId, int startIndex) {
-        for (Tag t : swf.tags) {
+        for (Tag t : swf.getTags()) {
             List<TEXTRECORD> textRecords = null;
             if (t instanceof StaticTextTag) {
                 textRecords = ((StaticTextTag) t).textRecords;
@@ -317,13 +317,13 @@ public abstract class FontTag extends CharacterTag implements AloneTag, Drawable
     }
 
     @Override
-    public Shape getOutline(int frame, int time, int ratio, RenderContext renderContext, Matrix transformation) {
+    public Shape getOutline(int frame, int time, int ratio, RenderContext renderContext, Matrix transformation, boolean stroked) {
         RECT r = getRect();
         return new Area(new Rectangle(r.Xmin, r.Ymin, r.getWidth(), r.getHeight()));
     }
 
     @Override
-    public void toImage(int frame, int time, int ratio, RenderContext renderContext, SerializableImage image, Matrix transformation, ColorTransform colorTransform) {
+    public void toImage(int frame, int time, int ratio, RenderContext renderContext, SerializableImage image, boolean isClip, Matrix transformation, Matrix strokeTransformation, Matrix absoluteTransformation, ColorTransform colorTransform) {
         SHAPERECORD.shapeListToImage(swf, getGlyphShapeTable(), image, frame, Color.black, colorTransform);
     }
 
@@ -341,7 +341,7 @@ public abstract class FontTag extends CharacterTag implements AloneTag, Drawable
             String cs = "" + c;
             cs = cs.replace("\\", "\\\\").replace("\"", "\\\"");
             result.append("\t\tcase \"").append(cs).append("\":\r\n");
-            CanvasShapeExporter exporter = new CanvasShapeExporter(null, unitDivisor, swf, shapes.get(i), new ColorTransform(), 0, 0);
+            CanvasShapeExporter exporter = new CanvasShapeExporter(null, unitDivisor, swf, shapes.get(i), null, 0, 0);
             exporter.export();
             result.append("\t\t").append(exporter.getShapeData().replaceAll("\r\n", "\r\n\t\t"));
             result.append("\tbreak;\r\n");
@@ -379,7 +379,7 @@ public abstract class FontTag extends CharacterTag implements AloneTag, Drawable
     }
 
     public DefineFontNameTag getFontNameTag() {
-        for (Tag t : swf.tags) {
+        for (Tag t : swf.getTags()) {
             if (t instanceof DefineFontNameTag) {
                 DefineFontNameTag dfn = (DefineFontNameTag) t;
                 if (dfn.fontId == getFontId()) {

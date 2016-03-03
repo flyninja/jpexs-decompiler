@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS
+ *  Copyright (C) 2010-2016 JPEXS
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -178,6 +178,14 @@ public class MainFrameRibbonMenu extends MainFrameMenu {
                 historyButton.setHorizontalAlignment(SwingUtilities.LEFT);
                 openHistoryPanel.addButtonToLastGroup(historyButton);
             }
+
+            if (recentFiles.isEmpty()) {
+                JCommandButton emptyLabel = new JCommandButton(translate("menu.recentFiles.empty"));
+                emptyLabel.setHorizontalAlignment(SwingUtilities.LEFT);
+                emptyLabel.setEnabled(false);
+                openHistoryPanel.addButtonToLastGroup(emptyLabel);
+            }
+
             openHistoryPanel.setMaxButtonColumns(1);
             targetPanel.setLayout(new BorderLayout());
             targetPanel.add(openHistoryPanel, BorderLayout.CENTER);

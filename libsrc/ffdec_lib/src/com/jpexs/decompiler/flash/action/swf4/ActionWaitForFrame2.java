@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,6 +23,7 @@ import com.jpexs.decompiler.flash.SWFOutputStream;
 import com.jpexs.decompiler.flash.action.Action;
 import com.jpexs.decompiler.flash.action.ActionGraph;
 import com.jpexs.decompiler.flash.action.ActionList;
+import com.jpexs.decompiler.flash.action.LocalDataArea;
 import com.jpexs.decompiler.flash.action.model.clauses.IfFrameLoadedActionItem;
 import com.jpexs.decompiler.flash.action.parser.ActionParseException;
 import com.jpexs.decompiler.flash.action.parser.pcode.FlasmLexer;
@@ -136,6 +137,12 @@ public class ActionWaitForFrame2 extends Action implements ActionStore {
          ret += "\r\n" + skipped.get(i).getASMSource(container, knownAddreses, version, exportMode);
          }*/
         return ret;
+    }
+
+    @Override
+    public boolean execute(LocalDataArea lda) {
+        //TODO: Execute - there's no wait yet
+        return true;
     }
 
     @Override

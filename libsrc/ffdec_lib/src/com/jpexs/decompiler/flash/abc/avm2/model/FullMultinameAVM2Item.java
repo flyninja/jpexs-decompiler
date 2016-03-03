@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,35 +42,40 @@ public class FullMultinameAVM2Item extends AVM2Item {
 
     public boolean property;
 
-    public FullMultinameAVM2Item(boolean property, GraphSourceItem instruction, GraphSourceItem lineStartIns, int multinameIndex, GraphTargetItem name) {
+    public String resolvedMultinameName;
+
+    public FullMultinameAVM2Item(boolean property, GraphSourceItem instruction, GraphSourceItem lineStartIns, int multinameIndex, String resolvedMultinameName, GraphTargetItem name) {
         super(instruction, lineStartIns, PRECEDENCE_PRIMARY);
         this.multinameIndex = multinameIndex;
         this.name = name;
         this.namespace = null;
         this.property = property;
+        this.resolvedMultinameName = resolvedMultinameName;
     }
 
-    public FullMultinameAVM2Item(boolean property, GraphSourceItem instruction, GraphSourceItem lineStartIns, int multinameIndex) {
+    public FullMultinameAVM2Item(boolean property, GraphSourceItem instruction, GraphSourceItem lineStartIns, int multinameIndex, String resolvedMultinameName) {
         super(instruction, lineStartIns, PRECEDENCE_PRIMARY);
         this.multinameIndex = multinameIndex;
+        this.resolvedMultinameName = resolvedMultinameName;
         this.name = null;
         this.namespace = null;
         this.property = property;
     }
 
-    public FullMultinameAVM2Item(boolean property, GraphSourceItem instruction, GraphSourceItem lineStartIns, int multinameIndex, GraphTargetItem name, GraphTargetItem namespace) {
+    public FullMultinameAVM2Item(boolean property, GraphSourceItem instruction, GraphSourceItem lineStartIns, int multinameIndex, String resolvedMultinameName, GraphTargetItem name, GraphTargetItem namespace) {
         super(instruction, lineStartIns, PRECEDENCE_PRIMARY);
         this.multinameIndex = multinameIndex;
         this.name = name;
         this.namespace = namespace;
         this.property = property;
+        this.resolvedMultinameName = resolvedMultinameName;
     }
 
     public boolean isRuntime() {
         return (name != null) || (namespace != null);
     }
 
-    public boolean isXML(AVM2ConstantPool constants, HashMap<Integer, String> localRegNames, List<DottedChain> fullyQualifiedNames) throws InterruptedException {
+    public boolean isTopLevel(String tname, AVM2ConstantPool constants, HashMap<Integer, String> localRegNames, List<DottedChain> fullyQualifiedNames) throws InterruptedException {
         String cname;
         if (name != null) {
             cname = name.toString(LocalData.create(constants, localRegNames, fullyQualifiedNames));
@@ -86,7 +91,11 @@ public class FullMultinameAVM2Item extends AVM2Item {
                 cns = ns.getName(constants).toPrintableString(true);
             }
         }
-        return cname.equals("XML") && cns.isEmpty();
+        return cname.equals(tname) && cns.isEmpty();
+    }
+
+    public boolean isXML(AVM2ConstantPool constants, HashMap<Integer, String> localRegNames, List<DottedChain> fullyQualifiedNames) throws InterruptedException {
+        return isTopLevel("XML", constants, localRegNames, fullyQualifiedNames);
     }
 
     @Override
@@ -102,7 +111,11 @@ public class FullMultinameAVM2Item extends AVM2Item {
         }
         if (name != null) {
             writer.append("[");
-            name.toString(writer, localData);
+            if (name instanceof IntegerValueAVM2Item) {
+                name.toString(writer, localData);
+            } else {
+                name.toStringString(writer, localData);
+            }
             writer.append("]");
         } else {
             AVM2ConstantPool constants = localData.constantsAvm2;
@@ -110,7 +123,7 @@ public class FullMultinameAVM2Item extends AVM2Item {
             if (multinameIndex > 0 && multinameIndex < constants.getMultinameCount()) {
                 writer.append(constants.getMultiname(multinameIndex).getName(constants, fullyQualifiedNames, false));
             } else {
-                writer.append("§§unknown_multiname");
+                writer.append("§§multiname(").append(multinameIndex).append(")");
             }
         }
         return writer;

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS
+ *  Copyright (C) 2010-2016 JPEXS
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,15 +17,10 @@
 package com.jpexs.decompiler.flash.gui.dumpview;
 
 import com.jpexs.decompiler.flash.SWF;
-import com.jpexs.decompiler.flash.SWFInputStream;
 import com.jpexs.decompiler.flash.dumpview.DumpInfo;
-import com.jpexs.decompiler.flash.tags.TagStub;
 import com.jpexs.decompiler.flash.treeitems.SWFList;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.TreeModel;
@@ -112,18 +107,7 @@ public final class DumpTreeModel implements TreeModel {
     @Override
     public int getChildCount(Object o) {
         DumpInfo di = (DumpInfo) o;
-        if (di.tagToResolve != null) {
-            TagStub tagStub = di.tagToResolve;
-            try {
-                SWFInputStream sis = tagStub.getDataStream();
-                sis.seek(tagStub.getDataPos());
-                sis.dumpInfo = di;
-                SWFInputStream.resolveTag(tagStub, 0, false, true, false);
-            } catch (InterruptedException | IOException ex) {
-                Logger.getLogger(DumpTreeModel.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            di.tagToResolve = null;
-        }
+        di.resolveTag();
         return di.getChildCount();
     }
 

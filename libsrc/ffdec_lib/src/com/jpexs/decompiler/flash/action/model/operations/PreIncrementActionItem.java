@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -45,7 +45,7 @@ import java.util.List;
 public class PreIncrementActionItem extends UnaryOpItem {
 
     public PreIncrementActionItem(GraphSourceItem instruction, GraphSourceItem lineStartIns, GraphTargetItem object) {
-        super(instruction, lineStartIns, PRECEDENCE_UNARY, object, "++");
+        super(instruction, lineStartIns, PRECEDENCE_UNARY, object, "++", "Number");
     }
 
     @Override

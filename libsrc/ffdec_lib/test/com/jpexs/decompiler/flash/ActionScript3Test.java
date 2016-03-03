@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -59,7 +59,7 @@ public class ActionScript3Test extends ActionScriptTestBase {
         //Main.initLogging(false);
         swf = new SWF(new BufferedInputStream(new FileInputStream("testdata/as3/as3.swf")), false);
         DoABC2Tag tag = null;
-        for (Tag t : swf.tags) {
+        for (Tag t : swf.getTags()) {
             if (t instanceof DoABC2Tag) {
                 tag = (DoABC2Tag) t;
                 break;
@@ -70,6 +70,8 @@ public class ActionScript3Test extends ActionScriptTestBase {
         assertTrue(clsIndex > -1);
         this.abc = tag.getABC();
         Configuration.autoDeobfuscate.set(false);
+        Configuration.simplifyExpressions.set(false);
+
         Configuration.decompile.set(true);
         Configuration.registerNameFormat.set("_loc%d_");
         Configuration.showMethodBodyId.set(false);
@@ -78,7 +80,7 @@ public class ActionScript3Test extends ActionScriptTestBase {
     private void decompileMethod(String methodName, String expectedResult, boolean isStatic) {
         int bodyIndex = abc.findMethodBodyByName(clsIndex, methodName);
         assertTrue(bodyIndex > -1);
-        HighlightedTextWriter writer = null;
+        HighlightedTextWriter writer;
         try {
             List<Traits> ts = new ArrayList<>();
             ts.add(abc.instance_info.get(clsIndex).instance_traits);
@@ -87,6 +89,7 @@ public class ActionScript3Test extends ActionScriptTestBase {
             abc.bodies.get(bodyIndex).toString(methodName, ScriptExportMode.AS, abc, null, writer, new ArrayList<>());
         } catch (InterruptedException ex) {
             fail();
+            return;
         }
         String actualResult = cleanPCode(writer.toString());
         expectedResult = cleanPCode(expectedResult);
@@ -438,6 +441,17 @@ public class ActionScript3Test extends ActionScriptTestBase {
                 + "trace(\"end\");\r\n", false);
     }
 
+    //@Test //todo: enable test
+    public void testTryShouldHaveCatchOrFinally() {
+        decompileMethod("testTryShouldHaveCatchOrFinally", "try\r\n"
+                + "{\r\n"
+                + "trace(\"try body\");\r\n"
+                + "}\r\n"
+                + "finally\n\n"
+                + "{\r\n"
+                + "}\r\n", false);
+    }
+
     @Test
     public void testSwitch() {
         decompileMethod("testSwitch", "var a:* = 5;\r\n"
@@ -453,7 +467,6 @@ public class ActionScript3Test extends ActionScriptTestBase {
                 + "break;\r\n"
                 + "case 89:\r\n"
                 + "trace(\"eightynine\");\r\n"
-                + "break;\r\n"
                 + "}\r\n", false);
     }
 
@@ -595,7 +608,7 @@ public class ActionScript3Test extends ActionScriptTestBase {
 
     @Test
     public void testMissingDefault() {
-        decompileMethod("testMissingDefault", "var jj:* = 1;\r\n"
+        decompileMethod("testMissingDefault", "var jj:int = 1;\r\n"
                 + "switch(jj)\r\n"
                 + "{\r\n"
                 + "case 1:\r\n"
@@ -611,10 +624,10 @@ public class ActionScript3Test extends ActionScriptTestBase {
 
     @Test
     public void testChainedAssignments() {
-        decompileMethod("testChainedAssignments", "var a:* = 0;\r\n"
-                + "var b:* = 0;\r\n"
-                + "var c:* = 0;\r\n"
-                + "var d:* = 0;\r\n"
+        decompileMethod("testChainedAssignments", "var a:int = 0;\r\n"
+                + "var b:int = 0;\r\n"
+                + "var c:int = 0;\r\n"
+                + "var d:int = 0;\r\n"
                 + "d = c = b = a = 5;\r\n"
                 + "var e:TestClass2 = TestClass2.createMe(\"test\");\r\n"
                 + "e.attrib1 = e.attrib2 = e.attrib3 = this.getCounter();\r\n"
@@ -661,10 +674,10 @@ public class ActionScript3Test extends ActionScriptTestBase {
     public void testDeclarations() {
         decompileMethod("testDeclarations", "var vall:* = undefined;\r\n"
                 + "var vstr:String = null;\r\n"
-                + "var vint:* = 0;\r\n"
+                + "var vint:int = 0;\r\n"
                 + "var vuint:uint = 0;\r\n"
                 + "var vclass:TestClass1 = null;\r\n"
-                + "var vnumber:* = NaN;\r\n"
+                + "var vnumber:Number = NaN;\r\n"
                 + "var vobject:Object = null;\r\n"
                 + "vall = 6;\r\n"
                 + "vstr = \"hello\";\r\n"
@@ -679,7 +692,7 @@ public class ActionScript3Test extends ActionScriptTestBase {
     @Test
     public void testForIn() {
         decompileMethod("testForIn", "var dic:Dictionary = null;\r\n"
-                + "var item:Object = null;\r\n"
+                + "var item:* = null;\r\n"
                 + "for(item in dic)\r\n"
                 + "{\r\n"
                 + "trace(item);\r\n"
@@ -702,16 +715,16 @@ public class ActionScript3Test extends ActionScriptTestBase {
 
     @Test
     public void testComplexExpressions() {
-        decompileMethod("testComplexExpressions", "var i:* = 0;\r\n"
-                + "var j:* = 0;\r\n"
+        decompileMethod("testComplexExpressions", "var i:int = 0;\r\n"
+                + "var j:int = 0;\r\n"
                 + "j = i = i + (i = i + i++);\r\n", false);
     }
 
     @Test
     public void testExpressions() {
         decompileMethod("testExpressions", "var arr:Array = null;\r\n"
-                + "var i:* = 5;\r\n"
-                + "var j:* = 5;\r\n"
+                + "var i:int = 5;\r\n"
+                + "var j:int = 5;\r\n"
                 + "if((i = i = i / 2) == 1 || i == 2)\r\n"
                 + "{\r\n"
                 + "arguments.concat(i);\r\n"
@@ -735,7 +748,7 @@ public class ActionScript3Test extends ActionScriptTestBase {
 
     @Test
     public void testLogicalComputing() {
-        decompileMethod("testLogicalComputing", "var b:* = false;\r\n"
+        decompileMethod("testLogicalComputing", "var b:Boolean = false;\r\n"
                 + "var i:* = 5;\r\n"
                 + "var j:* = 7;\r\n"
                 + "if(i > j)\r\n"
@@ -760,8 +773,8 @@ public class ActionScript3Test extends ActionScriptTestBase {
 
     @Test
     public void testDecl2() {
-        decompileMethod("testDecl2", "var k:* = 0;\r\n"
-                + "var i:* = 5;\r\n"
+        decompileMethod("testDecl2", "var k:int = 0;\r\n"
+                + "var i:int = 5;\r\n"
                 + "i = i + 7;\r\n"
                 + "if(i == 5)\r\n"
                 + "{\r\n"
@@ -776,10 +789,10 @@ public class ActionScript3Test extends ActionScriptTestBase {
     @Test
     public void testChain2() {
         decompileMethod("testChain2", "var g:Array = null;\r\n"
-                + "var h:* = false;\r\n"
-                + "var extraLine:* = false;\r\n"
-                + "var r:* = 7;\r\n"
-                + "var t:* = 0;\r\n"
+                + "var h:Boolean = false;\r\n"
+                + "var extraLine:Boolean = false;\r\n"
+                + "var r:int = 7;\r\n"
+                + "var t:int = 0;\r\n"
                 + "t = this.getInt();\r\n"
                 + "if(t + 1 < g.length)\r\n"
                 + "{\r\n"
@@ -794,7 +807,7 @@ public class ActionScript3Test extends ActionScriptTestBase {
 
     @Test
     public void testDoWhile2() {
-        decompileMethod("testDoWhile2", "var k:* = 5;\r\n"
+        decompileMethod("testDoWhile2", "var k:int = 5;\r\n"
                 + "do\r\n"
                 + "{\r\n"
                 + "k++;\r\n"
@@ -815,8 +828,8 @@ public class ActionScript3Test extends ActionScriptTestBase {
 
     @Test
     public void testWhileAnd() {
-        decompileMethod("testWhileAnd", "var a:* = 5;\r\n"
-                + "var b:* = 10;\r\n"
+        decompileMethod("testWhileAnd", "var a:int = 5;\r\n"
+                + "var b:int = 10;\r\n"
                 + "while(a < 10 && b > 1)\r\n"
                 + "{\r\n"
                 + "a++;\r\n"
@@ -836,7 +849,7 @@ public class ActionScript3Test extends ActionScriptTestBase {
 
     @Test
     public void testStringConcat() {
-        decompileMethod("testStringConcat", "var k:* = 8;\r\n"
+        decompileMethod("testStringConcat", "var k:int = 8;\r\n"
                 + "this.traceIt(\"hello\" + 5 * 6);\r\n"
                 + "this.traceIt(\"hello\" + (k - 1));\r\n"
                 + "this.traceIt(\"hello\" + 5 + 6);\r\n", false);
@@ -1125,4 +1138,64 @@ public class ActionScript3Test extends ActionScriptTestBase {
         expectedResult = expectedResult.replaceAll("[ \r\n]", "");
         assertEquals(actualResult, expectedResult);
     }
+
+    @Test
+    public void testRegExp() {
+        decompileMethod("testRegExp", "var a1:* = /[a-z\\r\\n0-9\\\\]+/i;\r\n"
+                + "var a2:* = /[a-z\\r\\n0-9\\\\]+/i;\r\n"
+                + "var b1:* = /[0-9AB]+/;\r\n"
+                + "var b2:* = /[0-9AB]+/;\r\n", false);
+    }
+
+    public void testDefaultNotLast() {
+        decompileMethod("testDefaultNotLast", "var k:* = 10;\r\n"
+                + "switch(k)\r\n"
+                + "{\r\n"
+                + "default:\r\n"
+                + "trace(\"def\");\r\n"
+                + "case 5:\r\n"
+                + "trace(\"def and 5\");\r\n"
+                + "break;\r\n"
+                + "case 4:\r\n"
+                + "trace(\"4\");\r\n"
+                + "}\r\n"
+                + "trace(\"after switch\");\r\n", false);
+    }
+
+    @Test
+    public void testDefaultNotLastGrouped() {
+        decompileMethod("testDefaultNotLastGrouped", "var k:* = 10;\r\n"
+                + "switch(k)\r\n"
+                + "{\r\n"
+                + "default:\r\n"
+                + "case \"six\":\r\n"
+                + "trace(\"def and 6\");\r\n"
+                + "case \"five\":\r\n"
+                + "trace(\"def and 6 and 5\");\r\n"
+                + "break;\r\n"
+                + "case \"four\":\r\n"
+                + "trace(\"4\");\r\n"
+                + "}\r\n"
+                + "trace(\"after switch\");\r\n", false);
+    }
+
+    /**
+     * Note: this one should be better compiled with ASC2/air, for String(xy) to
+     * be convert_s
+     */
+    @Test
+    public void testManualConvert() {
+        decompileMethod("testManualConvert", "trace(\"String(this).length\");\r\n"
+                + "trace(String(this).length);\r\n", false);
+    }
+
+    @Test
+    public void testPrecedenceX() {
+        decompileMethod("testPrecedenceX", "var a:* = 5;\r\n"
+                + "var b:* = 2;\r\n"
+                + "var c:* = 3;\r\n"
+                + "var d:* = a << (b >>> c);\r\n"
+                + "var e:* = a << b >>> c;\r\n", false);
+    }
+
 }

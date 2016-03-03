@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -86,7 +86,7 @@ public class CallMethodActionItem extends ActionItem {
             }
         } else {
             writer.append("this[");
-            methodName.appendTo(writer, localData);
+            methodName.appendTry(writer, localData);
             writer.append("].call");
         }
 

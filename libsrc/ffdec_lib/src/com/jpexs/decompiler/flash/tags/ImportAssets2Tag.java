@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -56,6 +56,12 @@ public class ImportAssets2Tag extends Tag implements ImportTag {
 
     @Conditional(value = "hasDigest", options = {1})
     String sha1 = "";
+
+    @Override
+    public void setUrl(String url) {
+        this.url = url;
+        setModified(true);
+    }
 
     /**
      * HashMap with assets

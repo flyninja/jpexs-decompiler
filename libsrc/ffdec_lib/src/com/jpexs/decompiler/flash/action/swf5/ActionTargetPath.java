@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,9 @@ package com.jpexs.decompiler.flash.action.swf5;
 
 import com.jpexs.decompiler.flash.BaseLocalData;
 import com.jpexs.decompiler.flash.action.Action;
+import com.jpexs.decompiler.flash.action.LocalDataArea;
 import com.jpexs.decompiler.flash.action.model.TargetPathActionItem;
+import com.jpexs.decompiler.flash.ecma.Undefined;
 import com.jpexs.decompiler.flash.types.annotations.SWFVersion;
 import com.jpexs.decompiler.graph.GraphSourceItem;
 import com.jpexs.decompiler.graph.GraphTargetItem;
@@ -40,6 +42,22 @@ public class ActionTargetPath extends Action {
     @Override
     public String toString() {
         return "TargetPath";
+    }
+
+    @Override
+    public boolean execute(LocalDataArea lda) {
+        if (lda.stack.isEmpty()) {
+            return false;
+        }
+        Object obj = lda.pop();
+
+        String path = lda.stage.getMemberPath(obj);
+        if (path == null) {
+            lda.stack.push(Undefined.INSTANCE);
+        } else {
+            lda.stack.push(path);
+        }
+        return true;
     }
 
     @Override

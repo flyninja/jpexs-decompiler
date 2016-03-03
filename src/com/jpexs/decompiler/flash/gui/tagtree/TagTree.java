@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS
+ *  Copyright (C) 2010-2016 JPEXS
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -139,13 +139,27 @@ public class TagTree extends JTree {
 
     private final MainPanel mainPanel;
 
-    public class TagTreeCellRenderer extends DefaultTreeCellRenderer {
+    private static final Map<TreeNodeType, Icon> ICONS;
+
+    static {
+        ICONS = new HashMap<>();
+        for (TreeNodeType treeNodeType : TreeNodeType.values()) {
+            if (treeNodeType != TreeNodeType.UNKNOWN && treeNodeType != TreeNodeType.SHOW_FRAME) {
+                String tagTypeStr = treeNodeType.toString().toLowerCase().replace("_", "");
+                ICONS.put(treeNodeType, View.getIcon(tagTypeStr + "16"));
+            }
+        }
+    }
+
+    public static Icon getIconForType(TreeNodeType t) {
+        return ICONS.get(t);
+    }
+
+    public static class TagTreeCellRenderer extends DefaultTreeCellRenderer {
 
         private Font plainFont;
 
         private Font boldFont;
-
-        private final Map<TreeNodeType, Icon> icons;
 
         public TagTreeCellRenderer() {
             setUI(new BasicLabelUI());
@@ -154,13 +168,6 @@ public class TagTree extends JTree {
             setBackgroundNonSelectionColor(Color.white);
             //setBackgroundSelectionColor(Color.ORANGE);
 
-            icons = new HashMap<>();
-            for (TreeNodeType treeNodeType : TreeNodeType.values()) {
-                if (treeNodeType != TreeNodeType.UNKNOWN && treeNodeType != TreeNodeType.SHOW_FRAME) {
-                    String tagTypeStr = treeNodeType.toString().toLowerCase().replace("_", "");
-                    icons.put(treeNodeType, View.getIcon(tagTypeStr + "16"));
-                }
-            }
         }
 
         @Override
@@ -174,7 +181,7 @@ public class TagTree extends JTree {
                 boolean hasFocus) {
 
             TreeItem val = (TreeItem) value;
-            if (!(val instanceof SWFList) && val.getSwf() == null) {
+            if (val != null && !(val instanceof SWFList) && val.getSwf() == null) {
                 // SWF was closed
                 value = null;
             }
@@ -183,6 +190,11 @@ public class TagTree extends JTree {
                     tree, value, sel,
                     expanded, leaf, row,
                     hasFocus);
+
+            if (val == null) {
+                return this;
+            }
+
             TreeNodeType type = getTreeNodeType(val);
 
             if (type == TreeNodeType.FOLDER && expanded) {
@@ -196,7 +208,7 @@ public class TagTree extends JTree {
                     setIcon(View.getIcon(itemName.toLowerCase() + "16"));
                 }
             } else {
-                setIcon(icons.get(type));
+                setIcon(ICONS.get(type));
             }
 
             /* boolean isModified = val instanceof Tag && ((Tag) val).isModified();
@@ -206,19 +218,27 @@ public class TagTree extends JTree {
              isModified = true;
              }
              }*/
+            boolean isReadOnly = false;
+            if (val instanceof Tag) {
+                isReadOnly = ((Tag) val).isReadOnly();
+            }
+
             boolean isModified = val.isModified();
             if (isModified) {
                 if (boldFont == null) {
                     Font font = getFont();
                     boldFont = font.deriveFont(Font.BOLD);
                 }
-            } else {
-                if (plainFont == null) {
-                    Font font = getFont();
-                    plainFont = font.deriveFont(Font.PLAIN);
-                }
+            } else if (plainFont == null) {
+                Font font = getFont();
+                plainFont = font.deriveFont(Font.PLAIN);
             }
             setFont(isModified ? boldFont : plainFont);
+            if (isReadOnly) {
+                setForeground(new Color(0xcc, 0xcc, 0xcc));
+            } else {
+                setForeground(Color.BLACK);
+            }
 
             return this;
         }
@@ -437,8 +457,7 @@ public class TagTree extends JTree {
         return Arrays.asList(PlaceObjectTag.ID, PlaceObject2Tag.ID, PlaceObject3Tag.ID, PlaceObject4Tag.ID,
                 RemoveObjectTag.ID, RemoveObject2Tag.ID, FrameLabelTag.ID,
                 StartSoundTag.ID, StartSound2Tag.ID, VideoFrameTag.ID,
-                SoundStreamBlockTag.ID, SoundStreamHeadTag.ID, SoundStreamHead2Tag.ID,
-                DefineScalingGridTag.ID);
+                SoundStreamBlockTag.ID, SoundStreamHeadTag.ID, SoundStreamHead2Tag.ID);
     }
 
     public List<Integer> getNestedTagIds(Tag obj) {

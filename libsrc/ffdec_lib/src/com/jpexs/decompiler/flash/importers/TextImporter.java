@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -72,12 +72,13 @@ public class TextImporter {
     public void importTextsSingleFile(File textsFile, SWF swf) {
         String texts = Helper.readTextFile(textsFile.getPath());
         Map<Integer, String[]> records = splitTextRecords(texts);
+        boolean ignoreLetterSpacing = Configuration.resetLetterSpacingOnTextImport.get();
         if (records != null) {
             for (int characterId : records.keySet()) {
                 TextTag textTag = swf.getText(characterId);
                 if (textTag != null) {
                     String[] currentRecords = records.get(characterId);
-                    String text = textTag.getFormattedText().text;
+                    String text = textTag.getFormattedText(ignoreLetterSpacing).text;
                     if (!saveText(textTag, text, currentRecords)) {
                         return;
                     }
@@ -132,10 +133,11 @@ public class TextImporter {
     public boolean importText(TextTag textTag, String newText) {
         String recordSeparator = Helper.newLine + Configuration.textExportSingleFileRecordSeparator.get() + Helper.newLine;
         boolean formatted = !newText.contains(recordSeparator) && newText.startsWith("[" + Helper.newLine);
+        boolean ignoreLetterSpacing = Configuration.resetLetterSpacingOnTextImport.get();
         if (!formatted) {
             String[] records = newText.split(recordSeparator);
             if (textTag != null) {
-                String text = textTag.getFormattedText().text;
+                String text = textTag.getFormattedText(ignoreLetterSpacing).text;
                 if (!saveText(textTag, text, records)) {
                     return false;
                 }
@@ -159,7 +161,7 @@ public class TextImporter {
      * @param texts
      * @return If false the processing should be interrupted
      */
-    public boolean saveText(TextTag textTag, String formattedText, String[] texts) {
+    private boolean saveText(TextTag textTag, String formattedText, String[] texts) {
         try {
             if (textTag.setFormattedText(missingCharacterHandler, formattedText, texts)) {
                 return true;

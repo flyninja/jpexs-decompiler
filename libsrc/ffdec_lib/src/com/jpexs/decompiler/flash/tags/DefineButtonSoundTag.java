@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,6 +26,7 @@ import com.jpexs.decompiler.flash.types.annotations.SWFType;
 import com.jpexs.decompiler.flash.types.annotations.SWFVersion;
 import com.jpexs.helpers.ByteArrayRange;
 import java.io.IOException;
+import java.util.Set;
 
 /**
  *
@@ -138,5 +139,21 @@ public class DefineButtonSoundTag extends Tag implements CharacterIdTag {
     @Override
     public void setCharacterId(int characterId) {
         this.buttonId = characterId;
+    }
+
+    @Override
+    public void getNeededCharacters(Set<Integer> needed) {
+        if (buttonSoundChar0 != 0) {
+            needed.add(buttonSoundChar0);
+        }
+        if (buttonSoundChar1 != 0) {
+            needed.add(buttonSoundChar1);
+        }
+        if (buttonSoundChar2 != 0) {
+            needed.add(buttonSoundChar2);
+        }
+        if (buttonSoundChar3 != 0) {
+            needed.add(buttonSoundChar3);
+        }
     }
 }

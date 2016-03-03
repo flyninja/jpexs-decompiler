@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -34,7 +34,9 @@ public abstract class GraphTextWriter {
     protected CodeFormatting formatting;
 
     public static final int TRAIT_INSTANCE_INITIALIZER = -1;
+
     public static final int TRAIT_CLASS_INITIALIZER = -2;
+
     public static final int TRAIT_SCRIPT_INITIALIZER = -3;
 
     public CodeFormatting getFormatting() {

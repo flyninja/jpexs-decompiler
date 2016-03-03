@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,6 +28,7 @@ import com.jpexs.decompiler.flash.action.model.CloneSpriteActionItem;
 import com.jpexs.decompiler.flash.action.model.DefineLocalActionItem;
 import com.jpexs.decompiler.flash.action.model.DeleteActionItem;
 import com.jpexs.decompiler.flash.action.model.DirectValueActionItem;
+import com.jpexs.decompiler.flash.action.model.EnumerateActionItem;
 import com.jpexs.decompiler.flash.action.model.EvalActionItem;
 import com.jpexs.decompiler.flash.action.model.FSCommandActionItem;
 import com.jpexs.decompiler.flash.action.model.FunctionActionItem;
@@ -134,13 +135,17 @@ import com.jpexs.decompiler.graph.model.BlockItem;
 import com.jpexs.decompiler.graph.model.BreakItem;
 import com.jpexs.decompiler.graph.model.CommaExpressionItem;
 import com.jpexs.decompiler.graph.model.ContinueItem;
+import com.jpexs.decompiler.graph.model.DefaultItem;
 import com.jpexs.decompiler.graph.model.DoWhileItem;
+import com.jpexs.decompiler.graph.model.DuplicateItem;
 import com.jpexs.decompiler.graph.model.ForItem;
 import com.jpexs.decompiler.graph.model.IfItem;
 import com.jpexs.decompiler.graph.model.LocalData;
 import com.jpexs.decompiler.graph.model.NotItem;
 import com.jpexs.decompiler.graph.model.OrItem;
 import com.jpexs.decompiler.graph.model.ParenthesisItem;
+import com.jpexs.decompiler.graph.model.PopItem;
+import com.jpexs.decompiler.graph.model.PushItem;
 import com.jpexs.decompiler.graph.model.SwitchItem;
 import com.jpexs.decompiler.graph.model.TernarOpItem;
 import com.jpexs.decompiler.graph.model.WhileItem;
@@ -367,17 +372,15 @@ public class ActionScript2Parser {
                     String fname = s.value.toString();
                     if (fname.equals(classNameStr)) { //constructor
                         constr = (function(!isInterface, "", true, variables));
-                    } else {
-                        if (!isInterface) {
-                            if (isStatic) {
-                                FunctionActionItem ft = function(!isInterface, "", true, variables);
-                                ft.calculatedFunctionName = pushConst(fname);
-                                staticFunctions.add(ft);
-                            } else {
-                                FunctionActionItem ft = function(!isInterface, "", true, variables);
-                                ft.calculatedFunctionName = pushConst(fname);
-                                functions.add(ft);
-                            }
+                    } else if (!isInterface) {
+                        if (isStatic) {
+                            FunctionActionItem ft = function(!isInterface, "", true, variables);
+                            ft.calculatedFunctionName = pushConst(fname);
+                            staticFunctions.add(ft);
+                        } else {
+                            FunctionActionItem ft = function(!isInterface, "", true, variables);
+                            ft.calculatedFunctionName = pushConst(fname);
+                            functions.add(ft);
                         }
                     }
                     break;
@@ -1108,10 +1111,10 @@ public class ActionScript2Parser {
                 List<GraphTargetItem> caseExprsAll = new ArrayList<>();
                 List<Integer> valueMapping = new ArrayList<>();
                 int pos = 0;
-                while (s.type == SymbolType.CASE) {
+                while (s.type == SymbolType.CASE || s.type == SymbolType.DEFAULT) {
                     //List<GraphTargetItem> caseExprs; = new ArrayList<>();
-                    while (s.type == SymbolType.CASE) {
-                        GraphTargetItem curCaseExpr = expression(inFunction, inMethod, true, variables);
+                    while (s.type == SymbolType.CASE || s.type == SymbolType.DEFAULT) {
+                        GraphTargetItem curCaseExpr = s.type == SymbolType.DEFAULT ? new DefaultItem() : expression(inFunction, inMethod, true, variables);
                         //caseExprs.add(curCaseExpr);
                         expectedType(SymbolType.COLON);
                         s = lex();
@@ -1124,14 +1127,8 @@ public class ActionScript2Parser {
                     caseCmds.add(caseCmd);
                     s = lex();
                 }
-                List<GraphTargetItem> defCmd = new ArrayList<>();
-                if (s.type == SymbolType.DEFAULT) {
-                    expectedType(SymbolType.COLON);
-                    defCmd = commands(inFunction, inMethod, forinlevel, variables);
-                    s = lexer.lex();
-                }
                 expected(s, lexer.yyline(), SymbolType.CURLY_CLOSE);
-                ret = new SwitchItem(null, null, null, switchExpr, caseExprsAll, caseCmds, defCmd, valueMapping);
+                ret = new SwitchItem(null, null, null, switchExpr, caseExprsAll, caseCmds, valueMapping);
                 break;
             case BREAK:
                 ret = new BreakItem(null, null, 0); //? There is no more than 1 level continue/break in AS1/2
@@ -1553,10 +1550,8 @@ public class ActionScript2Parser {
         lexer.pushback(s);
         if (cmd == null) {
             expr.add(expression(inFunction, inMethod, true, variables));
-        } else {
-            if (!cmd.hasReturnValue()) {
-                throw new ActionParseException("Expression expected", lexer.yyline());
-            }
+        } else if (!cmd.hasReturnValue()) {
+            throw new ActionParseException("Expression expected", lexer.yyline());
         }
         return new CommaExpressionItem(null, null, expr);
     }
@@ -1570,6 +1565,31 @@ public class ActionScript2Parser {
         ParsedSymbol s = lex();
 
         switch (s.type) {
+            case PREPROCESSOR:
+                expectedType(SymbolType.PARENT_OPEN);
+                switch ("" + s.value) {
+                    //AS 1/2:
+                    case "enumerate":
+                        ret = new EnumerateActionItem(null, null, expression(inFunction, inMethod, allowRemainder, variables));
+                        break;
+                    //Both ASs
+                    case "dup":
+                        ret = new DuplicateItem(null, null, expression(inFunction, inMethod, allowRemainder, variables));
+                        break;
+                    case "push":
+                        ret = new PushItem(expression(inFunction, inMethod, allowRemainder, variables));
+                        break;
+                    case "pop":
+                        ret = new PopItem(null, null);
+                        break;
+                    case "goto": //TODO
+                        throw new ActionParseException("Compiling §§" + s.value + " is not available, sorry", lexer.yyline());
+                    default:
+                        throw new ActionParseException("Unknown preprocessor instruction: §§" + s.value, lexer.yyline());
+
+                }
+                expectedType(SymbolType.PARENT_CLOSE);
+                break;
             case NEGATE:
                 versionRequired(s, 5);
                 ret = expressionPrimary(false, inFunction, inMethod, false, variables);
@@ -1837,12 +1857,10 @@ public class ActionScript2Parser {
             GraphTargetItem stored = v.getStoreValue();
             if (v.isDefinition()) {
                 v.setBoxedValue(new DefineLocalActionItem(null, null, pushConst(varName), stored));
+            } else if (stored != null) {
+                v.setBoxedValue(new SetVariableActionItem(null, null, pushConst(varName), stored));
             } else {
-                if (stored != null) {
-                    v.setBoxedValue(new SetVariableActionItem(null, null, pushConst(varName), stored));
-                } else {
-                    v.setBoxedValue(new GetVariableActionItem(null, null, pushConst(varName)));
-                }
+                v.setBoxedValue(new GetVariableActionItem(null, null, pushConst(varName)));
             }
         }
         if (lexer.lex().type != SymbolType.EOF) {

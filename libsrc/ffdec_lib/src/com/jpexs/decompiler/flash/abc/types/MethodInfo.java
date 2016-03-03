@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -301,6 +301,10 @@ public class MethodInfo {
             return "UNKNOWN";
         }
         return constants.getString(name_index);
+    }
+
+    public int getMaxReservedReg() {
+        return param_types.length + (flagNeed_rest() ? 1 : 0) + (flagNeed_arguments() ? 1 : 0);
     }
 
     public GraphTextWriter getParamStr(GraphTextWriter writer, AVM2ConstantPool constants, MethodBody body, ABC abc, List<DottedChain> fullyQualifiedNames) {

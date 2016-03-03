@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS
+ *  Copyright (C) 2010-2016 JPEXS
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,7 +16,6 @@
  */
 package com.jpexs.decompiler.flash.gui.abc;
 
-import com.jpexs.decompiler.flash.SWF;
 import com.jpexs.decompiler.flash.abc.avm2.deobfuscation.DeobfuscationLevel;
 import com.jpexs.decompiler.flash.gui.AppDialog;
 import com.jpexs.decompiler.flash.gui.View;

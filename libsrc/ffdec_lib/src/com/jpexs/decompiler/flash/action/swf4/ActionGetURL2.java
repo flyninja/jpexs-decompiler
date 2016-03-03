@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,7 @@ import com.jpexs.decompiler.flash.BaseLocalData;
 import com.jpexs.decompiler.flash.SWFInputStream;
 import com.jpexs.decompiler.flash.SWFOutputStream;
 import com.jpexs.decompiler.flash.action.Action;
+import com.jpexs.decompiler.flash.action.LocalDataArea;
 import com.jpexs.decompiler.flash.action.model.DirectValueActionItem;
 import com.jpexs.decompiler.flash.action.model.GetURL2ActionItem;
 import com.jpexs.decompiler.flash.action.model.LoadMovieActionItem;
@@ -34,6 +35,7 @@ import com.jpexs.decompiler.flash.action.model.UnLoadMovieActionItem;
 import com.jpexs.decompiler.flash.action.model.UnLoadMovieNumActionItem;
 import com.jpexs.decompiler.flash.action.parser.ActionParseException;
 import com.jpexs.decompiler.flash.action.parser.pcode.FlasmLexer;
+import com.jpexs.decompiler.flash.ecma.EcmaScript;
 import com.jpexs.decompiler.flash.types.annotations.Reserved;
 import com.jpexs.decompiler.flash.types.annotations.SWFVersion;
 import com.jpexs.decompiler.graph.GraphSourceItem;
@@ -110,6 +112,18 @@ public class ActionGetURL2 extends Action {
     }
 
     @Override
+    public boolean execute(LocalDataArea lda) {
+        if (lda.stack.size() < 2) {
+            return false;
+        }
+        String target = EcmaScript.toString(lda.stack.pop());
+        String urlString = EcmaScript.toString(lda.stack.pop());
+
+        //TODO: Execute - Connection
+        return true;
+    }
+
+    @Override
     public void translate(GraphSourceItem lineStartAction, TranslateStack stack, List<GraphTargetItem> output, HashMap<Integer, String> regNames, HashMap<String, GraphTargetItem> variables, HashMap<String, GraphTargetItem> functions, int staticOperation, String path) {
         GraphTargetItem targetString = stack.pop();
         GraphTargetItem urlString = stack.pop();
@@ -158,14 +172,12 @@ public class ActionGetURL2 extends Action {
                 } else {
                     output.add(new LoadMovieNumActionItem(this, lineStartAction, urlString, new DirectValueActionItem(null, null, 0, (Long) (long) (int) num, new ArrayList<>()), sendVarsMethod));
                 }
+            } else if (urlStr != null && urlStr.startsWith(printPrefix)) {
+                output.add(new PrintActionItem(this, lineStartAction, targetString, new DirectValueActionItem(urlStr.substring(printPrefix.length()))));
+            } else if (urlStr != null && urlStr.startsWith(printAsBitmapPrefix)) {
+                output.add(new PrintAsBitmapActionItem(this, lineStartAction, targetString, new DirectValueActionItem(urlStr.substring(printAsBitmapPrefix.length()))));
             } else {
-                if (urlStr != null && urlStr.startsWith(printPrefix)) {
-                    output.add(new PrintActionItem(this, lineStartAction, targetString, new DirectValueActionItem(urlStr.substring(printPrefix.length()))));
-                } else if (urlStr != null && urlStr.startsWith(printAsBitmapPrefix)) {
-                    output.add(new PrintAsBitmapActionItem(this, lineStartAction, targetString, new DirectValueActionItem(urlStr.substring(printAsBitmapPrefix.length()))));
-                } else {
-                    output.add(new GetURL2ActionItem(this, lineStartAction, urlString, targetString, sendVarsMethod));
-                }
+                output.add(new GetURL2ActionItem(this, lineStartAction, urlString, targetString, sendVarsMethod));
             }
         }
     }

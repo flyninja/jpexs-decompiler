@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,6 +18,9 @@ package com.jpexs.decompiler.flash.action.swf5;
 
 import com.jpexs.decompiler.flash.BaseLocalData;
 import com.jpexs.decompiler.flash.action.Action;
+import com.jpexs.decompiler.flash.action.ActionScriptFunction;
+import com.jpexs.decompiler.flash.action.ActionScriptObject;
+import com.jpexs.decompiler.flash.action.LocalDataArea;
 import com.jpexs.decompiler.flash.action.model.NewObjectActionItem;
 import com.jpexs.decompiler.flash.types.annotations.SWFVersion;
 import com.jpexs.decompiler.graph.GraphSourceItem;
@@ -41,6 +44,29 @@ public class ActionNewObject extends Action {
     @Override
     public String toString() {
         return "NewObject";
+    }
+
+    @Override
+    public boolean execute(LocalDataArea lda) {
+        if (lda.stack.size() < 2) {
+            return false;
+        }
+        String objectName = lda.popAsString();
+        int numArgs = (int) (double) (Double) lda.popAsNumber();
+        if (lda.stack.size() < numArgs) {
+            return false;
+        }
+        List<Object> args = new ArrayList<>();
+        for (int i = 0; i < numArgs; i++) {
+            args.add(lda.stack.pop());
+        }
+        ActionScriptObject obj = new ActionScriptObject();
+        //TODO:check type        
+        /*ActionScriptFunction constructor = (ActionScriptFunction) lda.stage.getMember(objectName);
+        lda.stage.callFunction(constructor.getFunctionOffset(), constructor.getFunctionLength(), args, constructor.getFuncRegNames(), obj);
+         */
+        lda.stack.push(obj);
+        return true;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS
+ *  Copyright (C) 2010-2016 JPEXS
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -56,6 +56,8 @@ public final class FlashPlayerPanel extends Panel implements Closeable, MediaDis
     private final Timer timer;
 
     private boolean stopped = true;
+
+    private boolean closed = false;
 
     private float frameRate;
 
@@ -197,7 +199,9 @@ public final class FlashPlayerPanel extends Panel implements Closeable, MediaDis
 
             @Override
             public void run() {
-
+                if (closed) {
+                    return;
+                }
                 try {
                     ShockwaveFlash flash1 = flash;
 
@@ -308,8 +312,9 @@ public final class FlashPlayerPanel extends Panel implements Closeable, MediaDis
     }
 
     @Override
-    public void close() throws IOException {
+    public synchronized void close() throws IOException {
         timer.cancel();
+        closed = true;
     }
 
     @Override

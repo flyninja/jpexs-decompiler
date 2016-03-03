@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,7 +44,9 @@ public class LineStyle {
 
     public int joinStyle;
 
-    public int miterLimitFactor;
+    public boolean noClose;
+
+    public float miterLimitFactor;
 
     public boolean hasFillFlag;
 
@@ -62,6 +64,7 @@ public class LineStyle {
             startCapStyle = lineStyle2.startCapStyle;
             endCapStyle = lineStyle2.endCapStyle;
             joinStyle = lineStyle2.joinStyle;
+            noClose = lineStyle2.noClose;
             miterLimitFactor = lineStyle2.miterLimitFactor;
             hasFillFlag = lineStyle2.hasFillFlag;
             fillType = lineStyle2.fillType == null ? null : new FillStyle(lineStyle2.fillType);

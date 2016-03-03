@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -56,7 +56,7 @@ public class GetSlotIns extends InstructionDefinition {
         } else if (obj instanceof ClassAVM2Item) {
             slotname = ((ClassAVM2Item) obj).className;
         } else if (obj instanceof ThisAVM2Item) {
-            slotname = ((ThisAVM2Item) obj).className;
+            slotname = ((ThisAVM2Item) obj).classMultiname;
         } else if (obj instanceof ScriptAVM2Item) {
             List<Trait> traits = localData.getScriptInfo().get(((ScriptAVM2Item) obj).scriptIndex).traits.traits;
             for (int t = 0; t < traits.size(); t++) {

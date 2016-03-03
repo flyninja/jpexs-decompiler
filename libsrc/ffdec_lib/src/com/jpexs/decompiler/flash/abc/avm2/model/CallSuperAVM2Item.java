@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -47,7 +47,7 @@ public class CallSuperAVM2Item extends AVM2Item {
 
     @Override
     public GraphTextWriter appendTo(GraphTextWriter writer, LocalData localData) throws InterruptedException {
-        if (!receiver.toString().equals("this")) {
+        if (!receiver.toString().equals("this") && !(receiver instanceof FindPropertyAVM2Item)) {
             receiver.toString(writer, localData);
             writer.append(".");
         }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -127,14 +127,14 @@ public abstract class ShapeTag extends CharacterTag implements DrawableTag, Lazy
     }
 
     @Override
-    public Shape getOutline(int frame, int time, int ratio, RenderContext renderContext, Matrix transformation) {
-        return transformation.toTransform().createTransformedShape(getShapes().getOutline(swf));
+    public Shape getOutline(int frame, int time, int ratio, RenderContext renderContext, Matrix transformation, boolean stroked) {
+        return transformation.toTransform().createTransformedShape(getShapes().getOutline(swf, stroked));
     }
 
     @Override
-    public void toImage(int frame, int time, int ratio, RenderContext renderContext, SerializableImage image, Matrix transformation, ColorTransform colorTransform) {
-        BitmapExporter.export(swf, getShapes(), null, image, transformation, colorTransform);
-        if (Configuration.debugMode.get()) { // show control points
+    public void toImage(int frame, int time, int ratio, RenderContext renderContext, SerializableImage image, boolean isClip, Matrix transformation, Matrix strokeTransformation, Matrix absoluteTransformation, ColorTransform colorTransform) {
+        BitmapExporter.export(swf, getShapes(), null, image, transformation, strokeTransformation, colorTransform);
+        if (Configuration._debugMode.get()) { // show control points
             List<GeneralPath> paths = PathExporter.export(swf, getShapes());
             double[] coords = new double[6];
             AffineTransform at = transformation.toTransform();
@@ -183,7 +183,7 @@ public abstract class ShapeTag extends CharacterTag implements DrawableTag, Lazy
 
     @Override
     public void toHtmlCanvas(StringBuilder result, double unitDivisor) {
-        CanvasShapeExporter cse = new CanvasShapeExporter(null, unitDivisor, swf, getShapes(), new ColorTransform(), 0, 0);
+        CanvasShapeExporter cse = new CanvasShapeExporter(null, unitDivisor, swf, getShapes(), null, 0, 0);
         cse.export();
         result.append(cse.getShapeData());
     }

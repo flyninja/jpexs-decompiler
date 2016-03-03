@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,7 +39,7 @@ import java.util.List;
 public class AddAVM2Item extends BinaryOpItem {
 
     public AddAVM2Item(GraphSourceItem instruction, GraphSourceItem lineStartIns, GraphTargetItem leftSide, GraphTargetItem rightSide) {
-        super(instruction, lineStartIns, PRECEDENCE_ADDITIVE, leftSide, rightSide, "+");
+        super(instruction, lineStartIns, PRECEDENCE_ADDITIVE, leftSide, rightSide, "+", "", ""); //?
     }
 
     @Override
@@ -68,8 +68,10 @@ public class AddAVM2Item extends BinaryOpItem {
     public Object getResult() {
         Object leftResult = leftSide.getResult();
         Object rightResult = rightSide.getResult();
+        leftResult = EcmaScript.toPrimitive(leftResult, "");
+        rightResult = EcmaScript.toPrimitive(rightResult, "");
         if (EcmaScript.type(leftResult) == EcmaType.STRING || EcmaScript.type(rightResult) == EcmaType.STRING) {
-            return "" + leftResult + rightResult;
+            return EcmaScript.toString(leftResult) + EcmaScript.toString(rightResult);
         }
         return EcmaScript.toNumber(leftResult) + EcmaScript.toNumber(rightResult);
     }

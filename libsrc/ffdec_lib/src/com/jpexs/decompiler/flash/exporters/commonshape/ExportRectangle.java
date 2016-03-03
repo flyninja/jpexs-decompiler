@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -62,6 +62,18 @@ public class ExportRectangle {
         return yMax - yMin;
     }
 
+    public boolean contains(Point point) {
+        double x = point.x;
+        double y = point.y;
+        return xMin <= x && xMax >= x && yMin <= y && yMax >= y;
+    }
+
+    public boolean contains(java.awt.Point point) {
+        double x = point.x;
+        double y = point.y;
+        return xMin <= x && xMax >= x && yMin <= y && yMax >= y;
+    }
+
     @Override
     public int hashCode() {
         long bits = Double.doubleToLongBits(xMin);
@@ -79,4 +91,10 @@ public class ExportRectangle {
         }
         return false;
     }
+
+    @Override
+    public String toString() {
+        return "[ExportRectangle x=" + xMin + ",y=" + yMin + ", w=" + getWidth() + ", h=" + getHeight() + "]";
+    }
+
 }

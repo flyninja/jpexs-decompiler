@@ -345,6 +345,16 @@ import classes.TestNs;
 			trace("end");
 		}
 
+		public function testTryShouldHaveCatchOrFinally() {
+			try
+			{
+				trace("try body");
+			}
+			finally
+			{
+			}
+		}
+
 		public function testSwitch()
 		{
 			var a=5;
@@ -923,6 +933,58 @@ import classes.TestNs;
 		
 		public function other(){
 			var n:TestNs = new TestNs();
+		}
+		
+		public function testRegExp() {
+			var a1 = new RegExp("[a-z\r\n0-9\\\\]+","i");
+			var a2 = /[a-z\r\n0-9\\]+/i;
+			
+			var b1 = new RegExp("[0-9AB]+");
+			var b2 = /[0-9AB]+/;
+		}
+			
+		public function testDefaultNotLast() {
+			var k = 10;
+			switch(k){
+				default:
+					trace("def");
+				case 5:
+					trace("def and 5");
+					break;
+				case 4:
+					trace("4");
+					break;					
+			}
+			trace("after switch");
+		}
+		
+		public function testDefaultNotLastGrouped() {
+			var k = 10;
+			switch(k){
+				default:
+				case "six":
+					trace("def and 6");
+				case "five":
+					trace("def and 6 and 5");
+					break;
+				case "four":
+					trace("4");
+					break;					
+			}
+			trace("after switch");
+		}
+		
+		public function testManualConvert(){
+			trace("String(this).length");
+			trace(String(this).length);
+		}
+		
+		public function testPrecedenceX(){		
+			var a = 5;
+			var b = 2;
+			var c = 3;
+			var d = a << (b >>> c);
+			var e = a << b >>> c;
 		}
 	}
 }

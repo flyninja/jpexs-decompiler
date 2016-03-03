@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS
+ *  Copyright (C) 2010-2016 JPEXS
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -74,7 +74,14 @@ public class ClassesListTreeModel extends AS3ClassTreeItem implements TreeModel 
     public final void setFilter(String filter) {
         root.clear();
 
+        List<String> ignoredClasses = new ArrayList<>();
+        List<String> ignoredNss = new ArrayList<>();
+        if (Configuration._ignoreAdditionalFlexClasses.get()) {
+            getSwf().getFlexMainClass(ignoredClasses, ignoredNss);
+        }
+
         filter = (filter == null || filter.isEmpty()) ? null : filter.toLowerCase();
+        loop:
         for (ScriptPack item : list) {
             if (filter != null) {
                 if (!item.getClassPath().toString().toLowerCase().contains(filter)) {
@@ -83,6 +90,17 @@ public class ClassesListTreeModel extends AS3ClassTreeItem implements TreeModel 
             }
             if (!item.isSimple && Configuration.ignoreCLikePackages.get()) {
                 continue;
+            }
+            if (Configuration._ignoreAdditionalFlexClasses.get()) {
+                String fullName = item.getClassPath().packageStr.add(item.getClassPath().className).toRawString();
+                if (ignoredClasses.contains(fullName)) {
+                    continue;
+                }
+                for (String ns : ignoredNss) {
+                    if (fullName.startsWith(ns + ".")) {
+                        continue loop;
+                    }
+                }
             }
 
             DottedChain packageStr = item.getClassPath().packageStr;

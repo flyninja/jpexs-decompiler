@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -96,7 +96,7 @@ public class ImageImporter extends TagImporter {
             }
 
             imageTag.setModified(true);
-            swf.tags.set(swf.tags.indexOf(it), imageTag);
+            swf.replaceTag(it, imageTag);
             swf.updateCharacters();
             return imageTag;
         }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS
+ *  Copyright (C) 2010-2016 JPEXS
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -51,8 +51,11 @@ public final class MainFrameRibbon extends AppRibbonFrame {
         super();
 
         FlashPlayerPanel flashPanel = null;
+        FlashPlayerPanel flashPanel2 = null;
+
         try {
             flashPanel = new FlashPlayerPanel(this);
+            flashPanel2 = new FlashPlayerPanel(this);
         } catch (FlashUnsupportedException fue) {
         }
 
@@ -65,7 +68,7 @@ public final class MainFrameRibbon extends AppRibbonFrame {
         mainMenu = new MainFrameRibbonMenu(this, ribbon, externalFlashPlayerUnavailable);
         mainMenu.createMenuBar();
 
-        panel = new MainPanel(this, mainMenu, flashPanel);
+        panel = new MainPanel(this, mainMenu, flashPanel, flashPanel2);
         panel.setBackground(Color.yellow);
         cnt.add(panel, BorderLayout.CENTER);
 
@@ -147,7 +150,7 @@ public final class MainFrameRibbon extends AppRibbonFrame {
 
                 }
 
-                boolean closeResult = panel.closeAll();
+                boolean closeResult = panel.closeAll(true);
                 if (closeResult) {
                     Main.exit();
                 }

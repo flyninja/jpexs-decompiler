@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS
+ *  Copyright (C) 2010-2016 JPEXS
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@ import com.jpexs.decompiler.flash.AbortRetryIgnoreHandler;
 import com.jpexs.decompiler.flash.ApplicationInfo;
 import com.jpexs.decompiler.flash.EventListener;
 import com.jpexs.decompiler.flash.IdentifiersDeobfuscation;
+import com.jpexs.decompiler.flash.ReadOnlyTagList;
 import com.jpexs.decompiler.flash.SWF;
 import com.jpexs.decompiler.flash.SWFBundle;
 import com.jpexs.decompiler.flash.SWFCompression;
@@ -80,6 +81,7 @@ import com.jpexs.decompiler.flash.exporters.swf.SwfXmlExporter;
 import com.jpexs.decompiler.flash.gui.Main;
 import com.jpexs.decompiler.flash.gui.helpers.CheckResources;
 import com.jpexs.decompiler.flash.helpers.FileTextWriter;
+import com.jpexs.decompiler.flash.helpers.SWFDecompilerPlugin;
 import com.jpexs.decompiler.flash.importers.AS2ScriptImporter;
 import com.jpexs.decompiler.flash.importers.AS3ScriptImporter;
 import com.jpexs.decompiler.flash.importers.BinaryDataImporter;
@@ -112,7 +114,6 @@ import com.jpexs.decompiler.flash.tags.base.SoundTag;
 import com.jpexs.decompiler.flash.tags.base.TextImportErrorHandler;
 import com.jpexs.decompiler.flash.tags.base.TextTag;
 import com.jpexs.decompiler.flash.treeitems.SWFList;
-import com.jpexs.decompiler.flash.types.ColorTransform;
 import com.jpexs.decompiler.flash.types.RECT;
 import com.jpexs.decompiler.flash.types.sound.SoundFormat;
 import com.jpexs.decompiler.flash.xfl.FLAVersion;
@@ -185,7 +186,21 @@ public class CommandLineArgumentParser {
         Configuration.internalFlashViewer,
         Configuration.autoDeobfuscate,
         Configuration.cacheOnDisk,
-        Configuration.overwriteExistingFiles
+        Configuration.cacheImages,
+        Configuration.overwriteExistingFiles,
+        Configuration.autoRenameIdentifiers,
+        Configuration.decimalAddress,
+        Configuration.showAllAddresses,
+        Configuration.smartNumberFormatting,
+        Configuration.enableScriptInitializerDisplay,
+        Configuration.resolveConstants,
+        Configuration.textExportSingleFile,
+        Configuration.scriptExportSingleFile,
+        Configuration.packJavaScripts,
+        Configuration.showMethodBodyId,
+        Configuration.getLocalNamesFromDebugInfo,
+        Configuration.ignoreCLikePackages,
+        Configuration.shapeImportUseNonSmoothedFill
     };
 
     public static boolean isCommandLineMode() {
@@ -467,6 +482,11 @@ public class CommandLineArgumentParser {
             out.println("  ...WARNING: Injected/SWD script filenames may be different than from standard compiler");
         }
 
+        if (filter == null || filter.equals("custom")) {
+            out.println(" " + (cnt++) + ") -custom <customparameter1> [<customparameter2>]...");
+            out.println("  ...Forwards all parameters after the -custom parameter to the plugins");
+        }
+
         printCmdLineUsageExamples(out, filter);
     }
 
@@ -627,7 +647,7 @@ public class CommandLineArgumentParser {
                     for (int i = 0; i < arguments.length; i++) {
                         System.out.println(i + ".:" + arguments[i]);
                     }
-                    Configuration.debugMode.set(true);
+                    Configuration._debugMode.set(true);
                     break;
                 default:
                     break OUTER;
@@ -700,6 +720,8 @@ public class CommandLineArgumentParser {
             parseRemoveCharacter(args, true);
         } else if (command.equals("importscript")) {
             parseImportScript(args);
+        } else if (command.equals("importscript")) {
+            parseCustom(args);
         } else if (command.equals("as3compiler")) {
             ActionScript3Parser.compile(null /*?*/, args.pop(), args.pop(), 0, 0);
         } else if (nextParam.equals("--debugtool")) {
@@ -1088,7 +1110,7 @@ public class CommandLineArgumentParser {
                 });
                 System.setOut(nullStream);
                 System.setErr(nullStream);
-                Main.initLogging(Configuration.debugMode.get());
+                Main.initLogging(Configuration._debugMode.get());
 
                 File[] files = new File(folder).listFiles(getSwfFilter());
                 for (File file : files) {
@@ -1098,7 +1120,7 @@ public class CommandLineArgumentParser {
                         swf.swfList = new SWFList();
                         swf.swfList.sourceInfo = sourceInfo;
                         boolean found = false;
-                        for (Tag tag : swf.tags) {
+                        for (Tag tag : swf.getTags()) {
                             if (tag.getId() == tagId) {
                                 found = true;
                                 break;
@@ -1115,7 +1137,7 @@ public class CommandLineArgumentParser {
 
                 System.setOut(oldOut);
                 System.setErr(oldErr);
-                Main.initLogging(Configuration.debugMode.get());
+                Main.initLogging(Configuration._debugMode.get());
                 break;
             }
             case "finderrorheader": {
@@ -1130,7 +1152,7 @@ public class CommandLineArgumentParser {
                 });
                 System.setOut(nullStream);
                 System.setErr(nullStream);
-                Main.initLogging(Configuration.debugMode.get());
+                Main.initLogging(Configuration._debugMode.get());
 
                 File[] files = new File(folder).listFiles(getSwfFilter());
                 for (File file : files) {
@@ -1140,7 +1162,7 @@ public class CommandLineArgumentParser {
                         swf.swfList = new SWFList();
                         swf.swfList.sourceInfo = sourceInfo;
                         boolean found = false;
-                        for (Tag tag : swf.tags) {
+                        for (Tag tag : swf.getTags()) {
                             if (tag instanceof JPEGTablesTag) {
                                 JPEGTablesTag jtt = (JPEGTablesTag) tag;
                                 if (ImageTag.hasErrorHeader(jtt.jpegData)) {
@@ -1172,7 +1194,7 @@ public class CommandLineArgumentParser {
 
                 System.setOut(oldOut);
                 System.setErr(oldErr);
-                Main.initLogging(Configuration.debugMode.get());
+                Main.initLogging(Configuration._debugMode.get());
                 break;
             }
         }
@@ -1299,7 +1321,7 @@ public class CommandLineArgumentParser {
                     String errFilePath = stdErr.replace("{swfFile}", inFileName);
                     Path.createDirectorySafe(new File(errFilePath).getParentFile());
                     System.setErr(new PrintStream(new FileOutputStream(errFilePath, true)));
-                    Main.initLogging(Configuration.debugMode.get());
+                    Main.initLogging(Configuration._debugMode.get());
                 }
 
                 long startTimeSwf = 0;
@@ -1326,16 +1348,14 @@ public class CommandLineArgumentParser {
                 }
 
                 List<Tag> extags = new ArrayList<>();
-                for (Tag t : swf.tags) {
+                for (Tag t : swf.getTags()) {
                     if (t instanceof CharacterIdTag) {
                         CharacterIdTag c = (CharacterIdTag) t;
                         if (selectionIds.contains(c.getCharacterId())) {
                             extags.add(t);
                         }
-                    } else {
-                        if (selectionIds.contains(0)) {
-                            extags.add(t);
-                        }
+                    } else if (selectionIds.contains(0)) {
+                        extags.add(t);
                     }
                 }
 
@@ -1385,37 +1405,37 @@ public class CommandLineArgumentParser {
 
                 if (exportAll || exportFormats.contains("image")) {
                     System.out.println("Exporting images...");
-                    new ImageExporter().exportImages(handler, outDir + (multipleExportTypes ? File.separator + ImageExportSettings.EXPORT_FOLDER_NAME : ""), extags, new ImageExportSettings(enumFromStr(formats.get("image"), ImageExportMode.class)), evl);
+                    new ImageExporter().exportImages(handler, outDir + (multipleExportTypes ? File.separator + ImageExportSettings.EXPORT_FOLDER_NAME : ""), new ReadOnlyTagList(extags), new ImageExportSettings(enumFromStr(formats.get("image"), ImageExportMode.class)), evl);
                 }
 
                 if (exportAll || exportFormats.contains("shape")) {
                     System.out.println("Exporting shapes...");
-                    new ShapeExporter().exportShapes(handler, outDir + (multipleExportTypes ? File.separator + ShapeExportSettings.EXPORT_FOLDER_NAME : ""), extags, new ShapeExportSettings(enumFromStr(formats.get("shape"), ShapeExportMode.class), zoom), evl);
+                    new ShapeExporter().exportShapes(handler, outDir + (multipleExportTypes ? File.separator + ShapeExportSettings.EXPORT_FOLDER_NAME : ""), new ReadOnlyTagList(extags), new ShapeExportSettings(enumFromStr(formats.get("shape"), ShapeExportMode.class), zoom), evl);
                 }
 
                 if (exportAll || exportFormats.contains("morphshape")) {
                     System.out.println("Exporting morphshapes...");
-                    new MorphShapeExporter().exportMorphShapes(handler, outDir + (multipleExportTypes ? File.separator + MorphShapeExportSettings.EXPORT_FOLDER_NAME : ""), extags, new MorphShapeExportSettings(enumFromStr(formats.get("morphshape"), MorphShapeExportMode.class), zoom), evl);
+                    new MorphShapeExporter().exportMorphShapes(handler, outDir + (multipleExportTypes ? File.separator + MorphShapeExportSettings.EXPORT_FOLDER_NAME : ""), new ReadOnlyTagList(extags), new MorphShapeExportSettings(enumFromStr(formats.get("morphshape"), MorphShapeExportMode.class), zoom), evl);
                 }
 
                 if (exportAll || exportFormats.contains("movie")) {
                     System.out.println("Exporting movies...");
-                    new MovieExporter().exportMovies(handler, outDir + (multipleExportTypes ? File.separator + MovieExportSettings.EXPORT_FOLDER_NAME : ""), extags, new MovieExportSettings(enumFromStr(formats.get("movie"), MovieExportMode.class)), evl);
+                    new MovieExporter().exportMovies(handler, outDir + (multipleExportTypes ? File.separator + MovieExportSettings.EXPORT_FOLDER_NAME : ""), new ReadOnlyTagList(extags), new MovieExportSettings(enumFromStr(formats.get("movie"), MovieExportMode.class)), evl);
                 }
 
                 if (exportAll || exportFormats.contains("font")) {
                     System.out.println("Exporting fonts...");
-                    new FontExporter().exportFonts(handler, outDir + (multipleExportTypes ? File.separator + FontExportSettings.EXPORT_FOLDER_NAME : ""), extags, new FontExportSettings(enumFromStr(formats.get("font"), FontExportMode.class)), evl);
+                    new FontExporter().exportFonts(handler, outDir + (multipleExportTypes ? File.separator + FontExportSettings.EXPORT_FOLDER_NAME : ""), new ReadOnlyTagList(extags), new FontExportSettings(enumFromStr(formats.get("font"), FontExportMode.class)), evl);
                 }
 
                 if (exportAll || exportFormats.contains("sound")) {
                     System.out.println("Exporting sounds...");
-                    new SoundExporter().exportSounds(handler, outDir + (multipleExportTypes ? File.separator + SoundExportSettings.EXPORT_FOLDER_NAME : ""), extags, new SoundExportSettings(enumFromStr(formats.get("sound"), SoundExportMode.class)), evl);
+                    new SoundExporter().exportSounds(handler, outDir + (multipleExportTypes ? File.separator + SoundExportSettings.EXPORT_FOLDER_NAME : ""), new ReadOnlyTagList(extags), new SoundExportSettings(enumFromStr(formats.get("sound"), SoundExportMode.class)), evl);
                 }
 
                 if (exportAll || exportFormats.contains("binarydata")) {
                     System.out.println("Exporting binaryData...");
-                    new BinaryDataExporter().exportBinaryData(handler, outDir + (multipleExportTypes ? File.separator + BinaryDataExportSettings.EXPORT_FOLDER_NAME : ""), extags, new BinaryDataExportSettings(enumFromStr(formats.get("binarydata"), BinaryDataExportMode.class)), evl);
+                    new BinaryDataExporter().exportBinaryData(handler, outDir + (multipleExportTypes ? File.separator + BinaryDataExportSettings.EXPORT_FOLDER_NAME : ""), new ReadOnlyTagList(extags), new BinaryDataExportSettings(enumFromStr(formats.get("binarydata"), BinaryDataExportMode.class)), evl);
                 }
 
                 if (exportAll || exportFormats.contains("text")) {
@@ -1424,7 +1444,7 @@ public class CommandLineArgumentParser {
                     if (singleTextFile == null) {
                         singleTextFile = Configuration.textExportSingleFile.get();
                     }
-                    new TextExporter().exportTexts(handler, outDir + (multipleExportTypes ? File.separator + TextExportSettings.EXPORT_FOLDER_NAME : ""), extags, new TextExportSettings(enumFromStr(formats.get("text"), TextExportMode.class), singleTextFile, zoom), evl);
+                    new TextExporter().exportTexts(handler, outDir + (multipleExportTypes ? File.separator + TextExportSettings.EXPORT_FOLDER_NAME : ""), new ReadOnlyTagList(extags), new TextExportSettings(enumFromStr(formats.get("text"), TextExportMode.class), singleTextFile, zoom), evl);
                 }
 
                 FrameExporter frameExporter = new FrameExporter();
@@ -1537,13 +1557,8 @@ public class CommandLineArgumentParser {
         long stopTime = System.currentTimeMillis();
         long time = stopTime - startTime;
         System.out.println("Export finished. Total export time: " + Helper.formatTimeSec(time));
-        if (exportOK) {
-            System.out.println("OK");
-            System.exit(0);
-        } else {
-            System.err.println("FAIL");
-            System.exit(1);
-        }
+        System.out.println(exportOK ? "OK" : "FAIL");
+        System.exit(exportOK ? 0 : 1);
     }
 
     private static void parseDeobfuscate(Stack<String> args) {
@@ -1620,39 +1635,38 @@ public class CommandLineArgumentParser {
             badArguments("compress");
         }
 
+        boolean result = false;
         try {
+            SWFCompression compression = SWFCompression.ZLIB;
+            String compressionString = !args.isEmpty() ? args.pop() : null;
+            if (compressionString != null) {
+                switch (compressionString.toLowerCase()) {
+                    case "zlib":
+                        compression = SWFCompression.ZLIB;
+                        break;
+                    case "lzma":
+                        compression = SWFCompression.LZMA;
+                        break;
+                    default:
+                        System.out.println("Unsupported compression method: " + compressionString);
+                        System.exit(0);
+                        break;
+                }
+            }
+
             try (InputStream fis = new BufferedInputStream(new FileInputStream(args.pop()));
                     OutputStream fos = new BufferedOutputStream(new FileOutputStream(args.pop()))) {
-                SWFCompression compression = SWFCompression.ZLIB;
-                String compressionString = !args.isEmpty() ? args.pop() : null;
-                if (compressionString != null) {
-                    switch (compressionString.toLowerCase()) {
-                        case "zlib":
-                            compression = SWFCompression.ZLIB;
-                            break;
-                        case "lzma":
-                            compression = SWFCompression.LZMA;
-                            break;
-                        default:
-                            System.out.println("Unsupported compression method: " + compressionString);
-                            System.exit(0);
-                            break;
-                    }
-                }
-
-                if (SWF.compress(fis, fos, compression)) {
-                    System.out.println("OK");
-                } else {
-                    System.err.println("FAIL");
-                }
+                result = SWF.compress(fis, fos, compression);
+                System.out.println(result ? "OK" : "FAIL");
             } catch (FileNotFoundException ex) {
                 System.err.println("File not found.");
+                System.exit(1);
             }
         } catch (IOException ex) {
             logger.log(Level.SEVERE, null, ex);
         }
 
-        System.exit(0);
+        System.exit(result ? 0 : 1);
     }
 
     private static void parseDecompress(Stack<String> args) {
@@ -1660,24 +1674,21 @@ public class CommandLineArgumentParser {
             badArguments("decompress");
         }
 
+        boolean result = false;
         try {
             try (InputStream fis = new BufferedInputStream(new FileInputStream(args.pop()));
                     OutputStream fos = new BufferedOutputStream(new FileOutputStream(args.pop()))) {
-                if (SWF.decompress(fis, fos)) {
-                    System.out.println("OK");
-                    System.exit(0);
-                } else {
-                    System.err.println("FAIL");
-                    System.exit(1);
-                }
+                result = SWF.decompress(fis, fos);
+                System.out.println(result ? "OK" : "FAIL");
             } catch (FileNotFoundException ex) {
                 System.err.println("File not found.");
+                System.exit(1);
             }
         } catch (IOException ex) {
             logger.log(Level.SEVERE, null, ex);
         }
 
-        System.exit(0);
+        System.exit(result ? 0 : 1);
     }
 
     private static void parseSwf2Xml(Stack<String> args) {
@@ -1691,6 +1702,7 @@ public class CommandLineArgumentParser {
                 new SwfXmlExporter().exportXml(swf, new File(args.pop()));
             } catch (FileNotFoundException ex) {
                 System.err.println("File not found.");
+                System.exit(1);
             } catch (InterruptedException ex) {
                 logger.log(Level.SEVERE, null, ex);
             }
@@ -1826,24 +1838,21 @@ public class CommandLineArgumentParser {
                 return;
         }
 
+        boolean result = false;
         try {
             try (InputStream fis = new BufferedInputStream(new FileInputStream(args.pop()));
                     OutputStream fos = new BufferedOutputStream(new FileOutputStream(args.pop()))) {
-                if (SWF.renameInvalidIdentifiers(renameType, fis, fos)) {
-                    System.out.println("OK");
-                    System.exit(0);
-                } else {
-                    System.err.println("FAIL");
-                    System.exit(1);
-                }
+                result = SWF.renameInvalidIdentifiers(renameType, fis, fos);
+                System.out.println(result ? "OK" : "FAIL");
             } catch (FileNotFoundException ex) {
                 System.err.println("File not found.");
+                System.exit(1);
             }
         } catch (IOException ex) {
             logger.log(Level.SEVERE, null, ex);
         }
 
-        System.exit(0);
+        System.exit(result ? 0 : 1);
     }
 
     private static Map<String, String> parseFormat(Stack<String> args) {
@@ -1883,31 +1892,27 @@ public class CommandLineArgumentParser {
             SWF swf = new SWF(is, Configuration.parallelSpeedUp.get());
             int totalPages = 0;
 
-            for (Tag t : swf.tags) {
+            for (Tag t : swf.getTags()) {
                 if (t instanceof DefineSpriteTag) {
                     DefineSpriteTag ds = (DefineSpriteTag) t;
                     if ("page1".equals(ds.getExportName())) {
                         totalPages = 1;
-                    } else {
-                        if (totalPages > 0) {
-                            totalPages++;
-                        }
+                    } else if (totalPages > 0) {
+                        totalPages++;
                     }
                 }
             }
 
             int page = 0;
 
-            for (Tag t : swf.tags) {
+            for (Tag t : swf.getTags()) {
                 if (t instanceof DefineSpriteTag) {
                     DefineSpriteTag ds = (DefineSpriteTag) t;
                     if ("page1".equals(ds.getExportName())) {
                         page = 1;
                         job = new PDFJob(new BufferedOutputStream(new FileOutputStream(outFile)));
-                    } else {
-                        if (page > 0) {
-                            page++;
-                        }
+                    } else if (page > 0) {
+                        page++;
                     }
                     if (("page" + page).equals(ds.getExportName())) {
                         if (!selection.contains(page)) {
@@ -1919,7 +1924,7 @@ public class CommandLineArgumentParser {
                         //displayRect.Ymax *= zoom;
                         Matrix m = new Matrix();
                         //m.scale(zoom);
-                        BufferedImage img = SWF.frameToImageGet(ds.getTimeline(), 0, 0, null, 0, displayRect, m, new ColorTransform(), Color.white, false, zoom).getBufferedImage();
+                        BufferedImage img = SWF.frameToImageGet(ds.getTimeline(), 0, 0, null, 0, displayRect, m, m, null, Color.white, zoom).getBufferedImage();
                         PageFormat pf = new PageFormat();
                         pf.setOrientation(PageFormat.PORTRAIT);
                         Paper p = new Paper();
@@ -2378,8 +2383,8 @@ public class CommandLineArgumentParser {
                         System.err.println("Tag number should be integer");
                         System.exit(1);
                     }
-                    if (tagNo < 0 || tagNo >= swf.tags.size()) {
-                        System.err.println("Tag number does not exist. Tag number should be between 0 and " + (swf.tags.size() - 1));
+                    if (tagNo < 0 || tagNo >= swf.getTags().size()) {
+                        System.err.println("Tag number does not exist. Tag number should be between 0 and " + (swf.getTags().size() - 1));
                         System.exit(1);
                     }
 
@@ -2394,7 +2399,7 @@ public class CommandLineArgumentParser {
 
                 Collections.sort(tagNumbersToRemove);
                 for (int i = tagNumbersToRemove.size() - 1; i >= 0; i--) {
-                    swf.tags.remove((int) tagNumbersToRemove.get(i));
+                    swf.removeTag((int) tagNumbersToRemove.get(i));
                 }
 
                 try {
@@ -2487,6 +2492,15 @@ public class CommandLineArgumentParser {
             System.err.println("I/O error during reading");
             System.exit(2);
         }
+    }
+
+    private static void parseCustom(Stack<String> args) {
+        String[] customParameters = new String[args.size()];
+        for (int i = 0; i < customParameters.length; i++) {
+            customParameters[i] = args.pop();
+        }
+
+        SWFDecompilerPlugin.customParameters = customParameters;
     }
 
     private static void replaceAS2PCode(String text, ASMSource src) throws IOException, InterruptedException {
@@ -2705,7 +2719,7 @@ public class CommandLineArgumentParser {
         pw.println("height=" + doubleToString(swf.displayRect.getHeight() / SWF.unitDivisor));
         pw.println("frameCount=" + swf.frameCount);
         pw.println("frameRate=" + doubleToString(swf.frameRate));
-        for (Tag t : swf.tags) {
+        for (Tag t : swf.getTags()) {
             if (t instanceof SetBackgroundColorTag) {
                 pw.println("backgroundColor=" + ((SetBackgroundColorTag) t).backgroundColor.toHexRGB());
             }
@@ -2717,7 +2731,7 @@ public class CommandLineArgumentParser {
         pw.println();
 
         pw.println("[tags]");
-        pw.println("tagCount=" + swf.tags.size());
+        pw.println("tagCount=" + swf.getTags().size());
         pw.println("hasEndTag=" + swf.hasEndTag);
         pw.println("characterCount=" + (swf.getCharacters().size()));
         pw.println("maxCharacterId=" + (swf.getNextCharacterId() - 1));
@@ -2852,16 +2866,12 @@ public class CommandLineArgumentParser {
                         if (!swf.generatePCodeSwdFile(new File(outSwd), new HashMap<>())) {
                             System.err.println("Generating SWD failed");
                         }
-                    } else {
-                        if (!swf.generateSwdFile(new File(outSwd), new HashMap<>())) {
-                            System.err.println("Generating SWD failed");
-                        }
+                    } else if (!swf.generateSwdFile(new File(outSwd), new HashMap<>())) {
+                        System.err.println("Generating SWD failed");
                     }
                 }
-            } else {
-                if (generateSwd) {
-                    System.err.println("WARNING: Cannot generate SWD for AS3 file");
-                }
+            } else if (generateSwd) {
+                System.err.println("WARNING: Cannot generate SWD for AS3 file");
             }
             System.out.println("OK");
         } catch (FileNotFoundException ex) {

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,7 +17,6 @@
 package com.jpexs.decompiler.graph;
 
 import com.jpexs.decompiler.flash.BaseLocalData;
-import com.jpexs.decompiler.flash.abc.avm2.parser.script.Reference;
 import com.jpexs.decompiler.flash.action.Action;
 import java.io.Serializable;
 import java.util.ArrayList;

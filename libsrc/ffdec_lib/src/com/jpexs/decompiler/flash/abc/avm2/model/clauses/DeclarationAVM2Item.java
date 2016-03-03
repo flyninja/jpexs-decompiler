@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,7 +26,7 @@ import com.jpexs.decompiler.flash.abc.avm2.model.SetSlotAVM2Item;
 import com.jpexs.decompiler.flash.helpers.GraphTextWriter;
 import com.jpexs.decompiler.flash.helpers.hilight.HighlightData;
 import com.jpexs.decompiler.graph.DottedChain;
-import com.jpexs.decompiler.graph.GraphTargetItem;import com.jpexs.decompiler.graph.GraphSourceItem;
+import com.jpexs.decompiler.graph.GraphTargetItem;
 import com.jpexs.decompiler.graph.TypeItem;
 import com.jpexs.decompiler.graph.model.LocalData;
 
@@ -85,6 +85,7 @@ public class DeclarationAVM2Item extends AVM2Item {
             srcData.declaration = true;
             srcData.regIndex = lti.regIndex;
 
+            GraphTargetItem val = lti.value;
             GraphTargetItem coerType = TypeItem.UNBOUNDED;
             if (lti.value instanceof CoerceAVM2Item) {
                 coerType = ((CoerceAVM2Item) lti.value).typeObj;
@@ -92,27 +93,45 @@ public class DeclarationAVM2Item extends AVM2Item {
             if (lti.value instanceof ConvertAVM2Item) {
                 coerType = ((ConvertAVM2Item) lti.value).type;
             }
+            //strip coerce if its declared as this type
+            if (coerType.equals(type) && !coerType.equals(TypeItem.UNBOUNDED)) {
+                val = val.value;
+            }
             srcData.declaredType = (coerType instanceof TypeItem) ? ((TypeItem) coerType).fullTypeName : DottedChain.ALL;
             writer.append("var ");
             writer.append(localName);
             writer.append(":");
-            coerType.appendTo(writer, localData);
+            type.appendTry(writer, localData);
             writer.append(" = ");
-            return lti.value.toString(writer, localData);
+            return val.toString(writer, localData);
         }
         if (assignment instanceof SetSlotAVM2Item) {
             SetSlotAVM2Item ssti = (SetSlotAVM2Item) assignment;
             HighlightData srcData = getSrcData();
             srcData.localName = ssti.getNameAsStr(localData);
             srcData.declaration = true;
+
+            GraphTargetItem val = ssti.value;
+            GraphTargetItem coerType = TypeItem.UNBOUNDED;
+            if (ssti.value instanceof CoerceAVM2Item) {
+                coerType = ((CoerceAVM2Item) ssti.value).typeObj;
+            }
+            if (ssti.value instanceof ConvertAVM2Item) {
+                coerType = ((ConvertAVM2Item) ssti.value).type;
+            }
+            //strip coerce if its declared as this type
+            if (coerType.equals(type) && !coerType.equals(TypeItem.UNBOUNDED)) {
+                val = val.value;
+            }
+
             srcData.declaredType = (type instanceof TypeItem) ? ((TypeItem) type).fullTypeName : DottedChain.ALL;
             writer.append("var ");
             ssti.getName(writer, localData);
             writer.append(":");
 
-            type.appendTo(writer, localData);
+            type.appendTry(writer, localData);
             writer.append(" = ");
-            return ssti.value.toString(writer, localData);
+            return val.toString(writer, localData);
         }
         writer.append("var ");
         return assignment.toString(writer, localData);

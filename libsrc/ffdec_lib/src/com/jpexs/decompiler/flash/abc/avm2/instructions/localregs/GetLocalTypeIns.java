@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,10 +26,15 @@ import com.jpexs.decompiler.flash.abc.avm2.model.ClassAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.LocalRegAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.ScriptAVM2Item;
 import com.jpexs.decompiler.flash.abc.avm2.model.ThisAVM2Item;
+import com.jpexs.decompiler.flash.abc.types.Multiname;
+import com.jpexs.decompiler.flash.abc.types.traits.Trait;
+import com.jpexs.decompiler.flash.abc.types.traits.TraitMethodGetterSetter;
 import com.jpexs.decompiler.flash.ecma.Undefined;
+import com.jpexs.decompiler.graph.DottedChain;
 import com.jpexs.decompiler.graph.GraphTargetItem;
 import com.jpexs.decompiler.graph.NotCompileTimeItem;
 import com.jpexs.decompiler.graph.TranslateStack;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -62,7 +67,11 @@ public abstract class GetLocalTypeIns extends InstructionDefinition {
             if (localData.isStatic) {
                 stack.push(new ClassAVM2Item(localData.getInstanceInfo().get(localData.classIndex).getName(localData.getConstants())));
             } else {
-                stack.push(new ThisAVM2Item(ins, localData.lineStartInstruction, localData.getInstanceInfo().get(localData.classIndex).getName(localData.getConstants())));
+
+                List<Trait> ts = localData.getInstanceInfo().get(localData.classIndex).instance_traits.traits;
+                boolean isBasicObject = localData.thisHasDefaultToPrimitive;
+                Multiname m = localData.getInstanceInfo().get(localData.classIndex).getName(localData.getConstants());
+                stack.push(new ThisAVM2Item(ins, localData.lineStartInstruction, m, m.getNameWithNamespace(localData.getConstants()), isBasicObject));
             }
             return;
         }

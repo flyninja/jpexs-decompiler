@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,6 +30,8 @@ public class ConvertData {
     public int deobfuscationMode;
 
     public Map<TraitSlotConst, AssignedValue> assignedValues = new HashMap<>();
+
+    public boolean thisHasDefaultToPrimitive;
 
     public ConvertData() {
         deobfuscationMode = Configuration.autoDeobfuscate.get() ? 1 : 0;

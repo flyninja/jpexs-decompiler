@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,10 @@ package com.jpexs.decompiler.flash.action.swf5;
 
 import com.jpexs.decompiler.flash.BaseLocalData;
 import com.jpexs.decompiler.flash.action.Action;
+import com.jpexs.decompiler.flash.action.ActionScriptObject;
+import com.jpexs.decompiler.flash.action.LocalDataArea;
 import com.jpexs.decompiler.flash.action.model.EnumerateActionItem;
+import com.jpexs.decompiler.flash.ecma.Null;
 import com.jpexs.decompiler.flash.types.annotations.SWFVersion;
 import com.jpexs.decompiler.graph.GraphSourceItem;
 import com.jpexs.decompiler.graph.GraphTargetItem;
@@ -40,6 +43,25 @@ public class ActionEnumerate extends Action {
     @Override
     public String toString() {
         return "Enumerate";
+    }
+
+    @Override
+    public boolean execute(LocalDataArea lda) {
+        if (lda.stack.isEmpty()) {
+            return false;
+        }
+        String objectName = lda.popAsString();
+        lda.stack.push(Null.INSTANCE);
+
+        Object o = lda.stage.getMember(objectName);
+
+        if (o instanceof ActionScriptObject) {
+            List<String> members = ((ActionScriptObject) o).enumerate();
+            for (String m : members) {
+                lda.stack.push(m);
+            }
+        }
+        return true;
     }
 
     @Override

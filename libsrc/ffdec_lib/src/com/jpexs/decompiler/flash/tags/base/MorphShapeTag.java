@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -279,13 +279,13 @@ public abstract class MorphShapeTag extends CharacterTag implements DrawableTag 
     }
 
     @Override
-    public void toImage(int frame, int time, int ratio, RenderContext renderContext, SerializableImage image, Matrix transformation, ColorTransform colorTransform) {
+    public void toImage(int frame, int time, int ratio, RenderContext renderContext, SerializableImage image, boolean isClip, Matrix transformation, Matrix strokeTransformation, Matrix absoluteTransformation, ColorTransform colorTransform) {
         SHAPEWITHSTYLE shape = getShapeAtRatio(ratio);
         // morphShape using shapeNum=3, morphShape2 using shapeNum=4
         // todo: Currently the generated image is not cached, because the cache
         // key contains the hashCode of the finalRecord object, and it is always
         // recreated
-        BitmapExporter.export(swf, shape, null, image, transformation, colorTransform);
+        BitmapExporter.export(swf, shape, null, image, transformation, strokeTransformation, colorTransform);
     }
 
     @Override
@@ -314,13 +314,13 @@ public abstract class MorphShapeTag extends CharacterTag implements DrawableTag 
     }
 
     @Override
-    public Shape getOutline(int frame, int time, int ratio, RenderContext renderContext, Matrix transformation) {
-        return transformation.toTransform().createTransformedShape(getShapeAtRatio(ratio).getOutline(swf));
+    public Shape getOutline(int frame, int time, int ratio, RenderContext renderContext, Matrix transformation, boolean stroked) {
+        return transformation.toTransform().createTransformedShape(getShapeAtRatio(ratio).getOutline(swf, stroked));
     }
 
     @Override
     public void toHtmlCanvas(StringBuilder result, double unitDivisor) {
-        CanvasMorphShapeExporter cmse = new CanvasMorphShapeExporter(swf, getShapeAtRatio(0), getShapeAtRatio(MAX_RATIO), new ColorTransform(), unitDivisor, 0, 0);
+        CanvasMorphShapeExporter cmse = new CanvasMorphShapeExporter(swf, getShapeAtRatio(0), getShapeAtRatio(MAX_RATIO), null, unitDivisor, 0, 0);
         cmse.export();
         result.append(cmse.getShapeData());
     }

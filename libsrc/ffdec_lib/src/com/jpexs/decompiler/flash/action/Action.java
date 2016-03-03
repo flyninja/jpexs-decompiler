@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -710,11 +710,12 @@ public abstract class Action implements GraphSourceItem {
         return toString();
     }
 
-    public boolean execute(LocalDataArea lda) {
-        //throw new UnsupportedOperationException("Action " + toString() + " not implemented");
-        return false;
-    }
+    public abstract boolean execute(LocalDataArea lda);
 
+    /* {
+     //throw new UnsupportedOperationException("Action " + toString() + " not implemented");
+     return false;
+     }*/
     /**
      * Translates this function to stack and output.
      *
@@ -862,6 +863,7 @@ public abstract class Action implements GraphSourceItem {
             } else {
                 logger.log(Level.SEVERE, "Decompilation error in: " + path, ex);
             }
+
             convertException = ex;
             Throwable cause = ex.getCause();
             if (ex instanceof ExecutionException && cause instanceof Exception) {
@@ -970,6 +972,9 @@ public abstract class Action implements GraphSourceItem {
                 output.add(new ScriptEndItem());
                 break;
             }
+            if (Configuration.simplifyExpressions.get()) {
+                stack.simplify();
+            }
             Action action = actions.get(ip);
             if (action.isIgnored()) {
                 ip++;
@@ -1019,11 +1024,12 @@ public abstract class Action implements GraphSourceItem {
                             }
                         }
                         out = ActionGraph.translateViaGraph(regNames, variables2, functions, actions.subList(adr2ip(actions, endAddr), adr2ip(actions, endAddr + size)), version, staticOperation, path + (cntName == null ? "" : "/" + cntName));
-                    } catch (OutOfMemoryError | TranslateException | StackOverflowError ex2) {
-                        logger.log(Level.SEVERE, "Decompilation error in: " + path, ex2);
-                        if (ex2 instanceof OutOfMemoryError) {
+                    } catch (OutOfMemoryError | TranslateException | StackOverflowError ex) {
+                        logger.log(Level.SEVERE, "Decompilation error in: " + path, ex);
+                        if (ex instanceof OutOfMemoryError) {
                             Helper.freeMem();
                         }
+
                         out = new ArrayList<>();
                         out.add(new CommentItem(new String[]{
                             "",
@@ -1031,7 +1037,7 @@ public abstract class Action implements GraphSourceItem {
                             " * " + AppResources.translate("decompilationError.obfuscated"),
                             Helper.decompilationErrorAdd == null ? null : " * " + Helper.decompilationErrorAdd,
                             " * " + AppResources.translate("decompilationError.errorType") + ": "
-                            + ex2.getClass().getSimpleName(),
+                            + ex.getClass().getSimpleName(),
                             ""}));
                     }
                     outs.add(out);

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -69,6 +69,7 @@ public final class MethodBody implements Cloneable {
     @Internal
     public boolean deleted;
 
+    @Internal
     boolean debugMode = false;
 
     public int method_info;
@@ -310,7 +311,7 @@ public final class MethodBody implements Cloneable {
                             HashMap<Integer, String> localRegNames = getLocalRegNames(abc);
                             List<GraphTargetItem> convertedItems1;
                             try (Statistics s = new Statistics("AVM2Code.toGraphTargetItems")) {
-                                convertedItems1 = converted.getCode().toGraphTargetItems(convertData, path, methodIndex, isStatic, scriptIndex, classIndex, abc, converted, localRegNames, scopeStack, initializerType, fullyQualifiedNames, initTraits, Graph.SOP_USE_STATIC, new HashMap<>(), converted.getCode().visitCode(converted));
+                                convertedItems1 = converted.getCode().toGraphTargetItems(convertData.thisHasDefaultToPrimitive, convertData, path, methodIndex, isStatic, scriptIndex, classIndex, abc, converted, localRegNames, scopeStack, initializerType, fullyQualifiedNames, initTraits, Graph.SOP_USE_STATIC, new HashMap<>(), converted.getCode().visitCode(converted));
                             }
                             try (Statistics s = new Statistics("Graph.graphToString")) {
                                 Graph.graphToString(convertedItems1, writer, LocalData.create(abc.constants, localRegNames, fullyQualifiedNames));
@@ -333,6 +334,7 @@ public final class MethodBody implements Cloneable {
                 } else {
                     logger.log(Level.SEVERE, "Decompilation error in: " + path, ex);
                 }
+
                 convertException = ex;
                 Throwable cause = ex.getCause();
                 if (ex instanceof ExecutionException && cause instanceof Exception) {

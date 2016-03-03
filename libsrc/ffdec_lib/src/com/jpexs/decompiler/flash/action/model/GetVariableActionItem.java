@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -76,7 +76,7 @@ public class GetVariableActionItem extends ActionItem {
             return IdentifiersDeobfuscation.appendObfuscatedIdentifier(((DirectValueActionItem) name).toStringNoQuotes(localData), writer);
         } else if ((!(name instanceof DirectValueActionItem)) || (!((DirectValueActionItem) name).isString())) {
             writer.append("eval(");
-            name.appendTo(writer, localData);
+            name.appendTry(writer, localData);
             return writer.append(")");
         }
         HighlightData srcData = getSrcData();
@@ -98,18 +98,12 @@ public class GetVariableActionItem extends ActionItem {
 
     @Override
     public boolean isCompileTime(Set<GraphTargetItem> dependencies) {
-        if (computedValue == null) {
-            return false;
-        }
-        return computedCompiletime;
+        return false; //?
     }
 
     @Override
     public Object getResult() {
-        if (computedValue == null) {
-            return Undefined.INSTANCE;
-        }
-        return computedResult;
+        return null;
     }
 
     public void setComputedValue(GraphTargetItem computedValue) {

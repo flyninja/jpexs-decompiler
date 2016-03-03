@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS
+ *  Copyright (C) 2010-2016 JPEXS
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,12 +52,15 @@ import com.jpexs.decompiler.flash.tags.Tag;
 import com.jpexs.decompiler.flash.tags.VideoFrameTag;
 import com.jpexs.decompiler.flash.tags.base.AloneTag;
 import com.jpexs.decompiler.flash.tags.base.BoundedTag;
+import com.jpexs.decompiler.flash.tags.base.CharacterIdTag;
 import com.jpexs.decompiler.flash.tags.base.CharacterTag;
 import com.jpexs.decompiler.flash.tags.base.FontTag;
 import com.jpexs.decompiler.flash.tags.base.PlaceObjectTypeTag;
+import com.jpexs.decompiler.flash.tags.base.RemoveTag;
 import com.jpexs.decompiler.flash.tags.base.SoundStreamHeadTypeTag;
 import com.jpexs.decompiler.flash.tags.base.TextTag;
 import com.jpexs.decompiler.flash.tags.gfx.DefineCompactedFont;
+import com.jpexs.decompiler.flash.timeline.DepthState;
 import com.jpexs.decompiler.flash.timeline.Frame;
 import com.jpexs.decompiler.flash.timeline.TagScript;
 import com.jpexs.decompiler.flash.timeline.Timelined;
@@ -69,7 +72,6 @@ import com.jpexs.decompiler.flash.types.RGB;
 import com.jpexs.decompiler.flash.types.SHAPE;
 import com.jpexs.decompiler.flash.types.TEXTRECORD;
 import com.jpexs.decompiler.flash.types.shaperecords.SHAPERECORD;
-import com.jpexs.helpers.Helper;
 import com.jpexs.helpers.SerializableImage;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
@@ -93,6 +95,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -125,6 +128,8 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
     private static final String BINARY_TAG_CARD = "BINARYTAG";
 
     private static final String METADATA_TAG_CARD = "METADATATAG";
+
+    private static final String EMPTY_CARD = "EMPTY";
 
     private static final String CARDTEXTPANEL = "Text card";
 
@@ -188,6 +193,15 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
 
     private MetadataTag metadataTag;
 
+    private boolean readOnly = false;
+
+    public void setReadOnly(boolean readOnly) {
+        this.readOnly = readOnly;
+        if (readOnly) {
+            parametersPanel.setVisible(false);
+        }
+    }
+
     public PreviewPanel(MainPanel mainPanel, FlashPlayerPanel flashPanel) {
         super(JSplitPane.HORIZONTAL_SPLIT, Configuration.guiPreviewSplitPaneDividerLocationPercent);
         this.mainPanel = mainPanel;
@@ -201,11 +215,18 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
         viewerCards.add(createBinaryCard(), BINARY_TAG_CARD);
         viewerCards.add(createMetadataCard(), METADATA_TAG_CARD);
         viewerCards.add(createGenericTagCard(), GENERIC_TAG_CARD);
+        viewerCards.add(createEmptyCard(), EMPTY_CARD);
         setLeftComponent(viewerCards);
 
         createParametersPanel();
 
         showCardLeft(FLASH_VIEWER_CARD);
+    }
+
+    private JPanel createEmptyCard() {
+        JPanel ret = new JPanel();
+        ret.add(new JLabel("-"));
+        return ret;
     }
 
     private void createParametersPanel() {
@@ -396,10 +417,10 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
     private void updateMetadataButtonsVisibility() {
         boolean edit = metadataEditor.isEditable();
         boolean editorMode = Configuration.editorMode.get();
-        metadataEditButton.setVisible(!edit);
-        metadataSaveButton.setVisible(edit);
+        metadataEditButton.setVisible(!readOnly && !edit);
+        metadataSaveButton.setVisible(!readOnly && edit);
         boolean metadataModified = isMetadataModified();
-        metadataCancelButton.setVisible(edit);
+        metadataCancelButton.setVisible(!readOnly && edit);
         metadataCancelButton.setEnabled(metadataModified || !editorMode);
     }
 
@@ -470,7 +491,9 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
         showFontPage(fontTag);
 
         showCardRight(CARDFONTPANEL);
-        parametersPanel.setVisible(true);
+        if (!readOnly) {
+            parametersPanel.setVisible(true);
+        }
         fontPanel.showFontTag(fontTag);
 
         int pageCount = getFontPageCount(fontTag);
@@ -494,13 +517,19 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
         return pageCount;
     }
 
+    public void showEmpty() {
+        showCardLeft(EMPTY_CARD);
+    }
+
     public void showTextPanel(TextTag textTag) {
         if (mainPanel.isInternalFlashViewerSelected() /*|| ft instanceof GFxDefineCompactedFont*/) {
             showImagePanel(MainPanel.makeTimelined(textTag), textTag.getSwf(), 0);
         }
 
         showCardRight(CARDTEXTPANEL);
-        parametersPanel.setVisible(true);
+        if (!readOnly) {
+            parametersPanel.setVisible(true);
+        }
         textPanel.setText(textTag);
     }
 
@@ -552,7 +581,7 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
     public void showMetaDataPanel(MetadataTag metadataTag) {
         showCardLeft(METADATA_TAG_CARD);
         this.metadataTag = metadataTag;
-        metadataEditor.setEditable(Configuration.editorMode.get());
+        metadataEditor.setEditable(!readOnly && !metadataTag.isReadOnly() && Configuration.editorMode.get());
         metadataEditor.setText(formatMetadata(metadataTag.xmlMetadata, 4));
         setMetadataModified(false);
         updateMetadataButtonsVisibility();
@@ -567,7 +596,7 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
 
     public void showGenericTagPanel(Tag tag) {
         showCardLeft(GENERIC_TAG_CARD);
-        genericEditButton.setVisible(true);
+        genericEditButton.setVisible(!tag.isReadOnly());
         genericSaveButton.setVisible(false);
         genericCancelButton.setVisible(false);
         genericTagPanel.setEditMode(false, tag);
@@ -575,6 +604,10 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
     }
 
     public void setImageReplaceButtonVisible(boolean show, boolean showAlpha) {
+        if (readOnly) {
+            show = false;
+            showAlpha = false;
+        }
         replaceImageButton.setVisible(show);
         replaceImageAlphaButton.setVisible(showAlpha);
         prevFontsButton.setVisible(false);
@@ -588,7 +621,23 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
         return t;
     }
 
-    public void createAndShowTempSwf(TreeItem tagObj) {
+    private static void writeTag(Tag t, SWFOutputStream sos) throws IOException {
+        t = classicTag(t);
+
+        t.writeTag(sos);
+        if (t instanceof CharacterIdTag) {
+            List<CharacterIdTag> chIdTags = t.getSwf().getCharacterIdTags(((CharacterIdTag) t).getCharacterId());
+            if (chIdTags != null) {
+                for (CharacterIdTag chIdTag : chIdTags) {
+                    if (!(chIdTag instanceof PlaceObjectTypeTag || chIdTag instanceof RemoveTag)) {
+                        ((Tag) chIdTag).writeTag(sos);
+                    }
+                }
+            }
+        }
+    }
+
+    public void createAndShowTempSwf(TreeItem treeItem) {
         SWF swf = null;
         try {
             if (tempFile != null) {
@@ -600,14 +649,14 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
 
             Color backgroundColor = View.getSwfBackgroundColor();
 
-            if (tagObj instanceof Tag) {
-                Tag tag = (Tag) tagObj;
+            if (treeItem instanceof Tag) {
+                Tag tag = (Tag) treeItem;
                 swf = tag.getSwf();
                 if (tag instanceof FontTag) { //Fonts are always black on white
                     backgroundColor = View.getDefaultBackgroundColor();
                 }
-            } else if (tagObj instanceof Frame) {
-                Frame fn = (Frame) tagObj;
+            } else if (treeItem instanceof Frame) {
+                Frame fn = (Frame) treeItem;
                 swf = fn.getSwf();
                 if (fn.timeline.timelined == swf) {
                     SetBackgroundColorTag setBgColorTag = swf.getBackgroundColor();
@@ -620,29 +669,29 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
             int frameCount = 1;
             float frameRate = swf.frameRate;
             HashMap<Integer, VideoFrameTag> videoFrames = new HashMap<>();
-            if (tagObj instanceof DefineVideoStreamTag) {
-                DefineVideoStreamTag vs = (DefineVideoStreamTag) tagObj;
-                SWF.populateVideoFrames(vs.getCharacterId(), swf.tags, videoFrames);
+            if (treeItem instanceof DefineVideoStreamTag) {
+                DefineVideoStreamTag vs = (DefineVideoStreamTag) treeItem;
+                SWF.populateVideoFrames(vs.getCharacterId(), swf.getTags(), videoFrames);
                 frameCount = videoFrames.size();
             }
 
             List<SoundStreamBlockTag> soundFrames = new ArrayList<>();
-            if (tagObj instanceof SoundStreamHeadTypeTag) {
-                soundFrames = ((SoundStreamHeadTypeTag) tagObj).getBlocks();
+            if (treeItem instanceof SoundStreamHeadTypeTag) {
+                soundFrames = ((SoundStreamHeadTypeTag) treeItem).getBlocks();
                 frameCount = soundFrames.size();
             }
 
-            if ((tagObj instanceof DefineMorphShapeTag) || (tagObj instanceof DefineMorphShape2Tag)) {
+            if ((treeItem instanceof DefineMorphShapeTag) || (treeItem instanceof DefineMorphShape2Tag)) {
                 frameRate = MainPanel.MORPH_SHAPE_ANIMATION_FRAME_RATE;
                 frameCount = (int) (MainPanel.MORPH_SHAPE_ANIMATION_LENGTH * frameRate);
             }
 
-            if (tagObj instanceof DefineSoundTag) {
+            if (treeItem instanceof DefineSoundTag) {
                 frameCount = 1;
             }
 
-            if (tagObj instanceof DefineSpriteTag) {
-                frameCount = ((DefineSpriteTag) tagObj).frameCount;
+            if (treeItem instanceof DefineSpriteTag) {
+                frameCount = ((DefineSpriteTag) treeItem).frameCount;
             }
 
             byte[] data;
@@ -650,12 +699,28 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
                 SWFOutputStream sos2 = new SWFOutputStream(baos, SWF.DEFAULT_VERSION);
                 RECT outrect = new RECT(swf.displayRect);
 
-                if (tagObj instanceof FontTag) {
+                RECT treeItemBounds = null;
+                if (treeItem instanceof FontTag) {
                     outrect.Xmin = 0;
                     outrect.Ymin = 0;
                     outrect.Xmax = FontTag.PREVIEWSIZE * 20;
                     outrect.Ymax = FontTag.PREVIEWSIZE * 20;
+                } else if (treeItem instanceof BoundedTag) {
+                    treeItemBounds = ((BoundedTag) treeItem).getRect();
+                } else if (treeItem instanceof Frame) {
+                    treeItemBounds = ((Frame) treeItem).timeline.timelined.getRect();
                 }
+
+                if (treeItemBounds != null) {
+                    if (outrect.getWidth() < treeItemBounds.getWidth()) {
+                        outrect.Xmax += treeItemBounds.getWidth() - outrect.getWidth();
+                    }
+
+                    if (outrect.getHeight() < treeItemBounds.getHeight()) {
+                        outrect.Ymax += treeItemBounds.getHeight() - outrect.getHeight();
+                    }
+                }
+
                 int width = outrect.getWidth();
                 int height = outrect.getHeight();
 
@@ -675,24 +740,13 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
 
                 setBgColorTag.writeTag(sos2);
 
-                if (tagObj instanceof Frame) {
-                    Frame fn = (Frame) tagObj;
+                if (treeItem instanceof Frame) {
+                    Frame fn = (Frame) treeItem;
                     Timelined parent = fn.timeline.timelined;
-                    List<Tag> subs = fn.timeline.tags;
                     List<Integer> doneCharacters = new ArrayList<>();
-                    int frameCnt = 0;
-                    for (Tag t : subs) {
+                    for (Tag t : parent.getTags()) {
                         if (t instanceof FileAttributesTag || t instanceof SetBackgroundColorTag) {
                             continue;
-                        }
-
-                        if (t instanceof ShowFrameTag) {
-                            frameCnt++;
-                            continue;
-                        }
-
-                        if (frameCnt > fn.frame) {
-                            break;
                         }
 
                         if (t instanceof DoActionTag || t instanceof DoInitActionTag) {
@@ -704,57 +758,55 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
                         t.getNeededCharactersDeep(needed);
                         for (int n : needed) {
                             if (!doneCharacters.contains(n)) {
-                                classicTag(swf.getCharacter(n)).writeTag(sos2);
+                                writeTag(swf.getCharacter(n), sos2);
                                 doneCharacters.add(n);
                             }
                         }
+
+                        if (t instanceof ShowFrameTag || t instanceof PlaceObjectTypeTag || t instanceof RemoveTag) {
+                            continue;
+                        }
+
                         if (t instanceof CharacterTag) {
                             int characterId = ((CharacterTag) t).getCharacterId();
                             if (!doneCharacters.contains(characterId)) {
                                 doneCharacters.add(((CharacterTag) t).getCharacterId());
                             }
                         }
-                        classicTag(t).writeTag(sos2);
 
-                        if (parent != null) {
-                            if (t instanceof PlaceObjectTypeTag) {
-                                PlaceObjectTypeTag pot = (PlaceObjectTypeTag) t;
-                                int chid = pot.getCharacterId();
-                                int depth = pot.getDepth();
-                                MATRIX mat = pot.getMatrix();
-                                if (mat == null) {
-                                    mat = new MATRIX();
-                                }
-                                mat = Helper.deepCopy(mat);
-                                RECT r = parent.getRect();
-                                mat.translateX += width / 2 - r.getWidth() / 2;
-                                mat.translateY += height / 2 - r.getHeight() / 2;
-                                new PlaceObject2Tag(swf, false, false, false, false, false, true, false, true, depth, chid, mat, null, 0, null, 0, null).writeTag(sos2);
-
-                            }
-                        }
+                        writeTag(t, sos2);
                     }
+
+                    RECT r = parent.getRect();
+                    for (Map.Entry<Integer, DepthState> value : fn.layers.entrySet()) {
+                        PlaceObjectTypeTag pot = value.getValue().toPlaceObjectTag(value.getKey());
+                        MATRIX mat = new MATRIX(pot.getMatrix());
+                        mat.translateX += width / 2 - r.getWidth() / 2;
+                        mat.translateY += height / 2 - r.getHeight() / 2;
+                        pot.setMatrix(mat);
+                        pot.writeTag(sos2);
+                    }
+
                     new ShowFrameTag(swf).writeTag(sos2);
                 } else {
-
                     boolean isSprite = false;
-                    if (tagObj instanceof DefineSpriteTag) {
+                    if (treeItem instanceof DefineSpriteTag) {
                         isSprite = true;
                     }
                     int chtId = 0;
-                    if (tagObj instanceof CharacterTag) {
-                        chtId = ((CharacterTag) tagObj).getCharacterId();
+                    if (treeItem instanceof CharacterTag) {
+                        chtId = ((CharacterTag) treeItem).getCharacterId();
                     }
 
-                    if (tagObj instanceof DefineBitsTag) {
+                    if (treeItem instanceof DefineBitsTag) {
                         JPEGTablesTag jtt = swf.getJtt();
                         if (jtt != null) {
                             jtt.writeTag(sos2);
                         }
-                    } else if (tagObj instanceof AloneTag) {
+                    } else if (treeItem instanceof AloneTag) {
                     } else {
                         Set<Integer> needed = new HashSet<>();
-                        ((Tag) tagObj).getNeededCharactersDeep(needed);
+                        ((Tag) treeItem).getNeededCharactersDeep(needed);
                         for (int n : needed) {
                             if (isSprite && chtId == n) {
                                 continue;
@@ -768,19 +820,19 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
                                 }
                             }
 
-                            classicTag(characterTag).writeTag(sos2);
+                            writeTag(characterTag, sos2);
                         }
                     }
 
-                    classicTag((Tag) tagObj).writeTag(sos2);
+                    writeTag((Tag) treeItem, sos2);
 
                     MATRIX mat = new MATRIX();
                     mat.hasRotate = false;
                     mat.hasScale = false;
                     mat.translateX = 0;
                     mat.translateY = 0;
-                    if (tagObj instanceof BoundedTag) {
-                        RECT r = ((BoundedTag) tagObj).getRect();
+                    if (treeItem instanceof BoundedTag) {
+                        RECT r = ((BoundedTag) treeItem).getRect();
                         mat.translateX = -r.Xmin;
                         mat.translateY = -r.Ymin;
                         mat.translateX = mat.translateX + width / 2 - r.getWidth() / 2;
@@ -789,9 +841,8 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
                         mat.translateX = width / 4;
                         mat.translateY = height / 4;
                     }
-                    if (tagObj instanceof FontTag) {
-
-                        FontTag ft = (FontTag) classicTag((Tag) tagObj);
+                    if (treeItem instanceof FontTag) {
+                        FontTag ft = (FontTag) classicTag((Tag) treeItem);
 
                         int countGlyphsTotal = ft.getGlyphShapeTable().size();
                         int countGlyphs = Math.min(SHAPERECORD.MAX_CHARACTERS_IN_FONT_PREVIEW, countGlyphsTotal);
@@ -875,25 +926,25 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
                             tmat.translateX = x * width / cols + width / cols / 2 - w / 2;
                             tmat.translateY = y * height / rows + height / rows / 2;
                             new DefineTextTag(swf, 999 + f, new RECT(0, cw, ymin, ymin + h), new MATRIX(), rec).writeTag(sos2);
-                            new PlaceObject2Tag(swf, false, false, false, true, false, true, true, false, 1 + f, 999 + f, tmat, null, 0, null, 0, null).writeTag(sos2);
+                            new PlaceObject2Tag(swf, false, 1 + f, 999 + f, tmat, null, 0, null, -1, null).writeTag(sos2);
                             x++;
                         }
                         new ShowFrameTag(swf).writeTag(sos2);
-                    } else if ((tagObj instanceof DefineMorphShapeTag) || (tagObj instanceof DefineMorphShape2Tag)) {
-                        new PlaceObject2Tag(swf, false, false, false, true, false, true, true, false, 1, chtId, mat, null, 0, null, 0, null).writeTag(sos2);
+                    } else if ((treeItem instanceof DefineMorphShapeTag) || (treeItem instanceof DefineMorphShape2Tag)) {
+                        new PlaceObject2Tag(swf, false, 1, chtId, mat, null, 0, null, -1, null).writeTag(sos2);
                         new ShowFrameTag(swf).writeTag(sos2);
                         for (int ratio = 0; ratio < 65536; ratio += 65536 / frameCount) {
-                            new PlaceObject2Tag(swf, false, false, false, true, false, true, false, true, 1, chtId, mat, null, ratio, null, 0, null).writeTag(sos2);
+                            new PlaceObject2Tag(swf, true, 1, chtId, mat, null, ratio, null, -1, null).writeTag(sos2);
                             new ShowFrameTag(swf).writeTag(sos2);
                         }
-                    } else if (tagObj instanceof SoundStreamHeadTypeTag) {
+                    } else if (treeItem instanceof SoundStreamHeadTypeTag) {
                         for (SoundStreamBlockTag blk : soundFrames) {
                             blk.writeTag(sos2);
                             new ShowFrameTag(swf).writeTag(sos2);
                         }
-                    } else if (tagObj instanceof DefineSoundTag) {
+                    } else if (treeItem instanceof DefineSoundTag) {
                         ExportAssetsTag ea = new ExportAssetsTag(swf);
-                        DefineSoundTag ds = (DefineSoundTag) tagObj;
+                        DefineSoundTag ds = (DefineSoundTag) treeItem;
                         ea.tags.add(ds.soundId);
                         ea.names.add("my_define_sound");
                         ea.writeTag(sos2);
@@ -999,9 +1050,9 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
                         new ShowFrameTag(swf).writeTag(sos2);
 
                         new ShowFrameTag(swf).writeTag(sos2);
-                    } else if (tagObj instanceof DefineVideoStreamTag) {
+                    } else if (treeItem instanceof DefineVideoStreamTag) {
 
-                        new PlaceObject2Tag(swf, false, false, false, false, false, true, true, false, 1, chtId, mat, null, 0, null, 0, null).writeTag(sos2);
+                        new PlaceObject2Tag(swf, false, 1, chtId, mat, null, -1, null, -1, null).writeTag(sos2);
                         List<VideoFrameTag> frs = new ArrayList<>(videoFrames.values());
                         Collections.sort(frs, new Comparator<VideoFrameTag>() {
                             @Override
@@ -1014,16 +1065,16 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
                         for (VideoFrameTag f : frs) {
                             if (!first) {
                                 ratio++;
-                                new PlaceObject2Tag(swf, false, false, false, true, false, false, false, true, 1, 0, null, null, ratio, null, 0, null).writeTag(sos2);
+                                new PlaceObject2Tag(swf, true, 1, 0, null, null, ratio, null, -1, null).writeTag(sos2);
                             }
                             f.writeTag(sos2);
                             new ShowFrameTag(swf).writeTag(sos2);
                             first = false;
                         }
-                    } else if (tagObj instanceof DefineSpriteTag) {
-                        DefineSpriteTag s = (DefineSpriteTag) tagObj;
+                    } else if (treeItem instanceof DefineSpriteTag) {
+                        DefineSpriteTag s = (DefineSpriteTag) treeItem;
                         Tag lastTag = null;
-                        for (Tag t : s.subTags) {
+                        for (Tag t : s.getTags()) {
                             if (t instanceof EndTag) {
                                 break;
                             } else if (t instanceof PlaceObjectTypeTag) {
@@ -1037,11 +1088,11 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
                                 lastTag = t;
                             }
                         }
-                        if (!s.subTags.isEmpty() && (lastTag != null) && (!(lastTag instanceof ShowFrameTag))) {
+                        if (!s.getTags().isEmpty() && (lastTag != null) && (!(lastTag instanceof ShowFrameTag))) {
                             new ShowFrameTag(swf).writeTag(sos2);
                         }
                     } else {
-                        new PlaceObject2Tag(swf, false, false, false, true, false, true, true, false, 1, chtId, mat, null, 0, null, 0, null).writeTag(sos2);
+                        new PlaceObject2Tag(swf, false, 1, chtId, mat, null, 0, null, -1, null).writeTag(sos2);
                         new ShowFrameTag(swf).writeTag(sos2);
                     }
 
@@ -1160,7 +1211,7 @@ public class PreviewPanel extends JPersistentSplitPane implements TagEditorPanel
         tag.getTimelined().resetTimeline();
         swf.assignClassesToSymbols();
         swf.assignExportNamesToSymbols();
-        mainPanel.repaintTree();
+        mainPanel.refreshTree(swf);
         mainPanel.setTagTreeSelectedNode(tag);
         genericEditButton.setVisible(true);
         genericSaveButton.setVisible(false);

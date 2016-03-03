@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -179,7 +179,11 @@ public class CanvasShapeExporter extends ShapeExporterBase {
     }
 
     @Override
-    public void endLines() {
+    public void endLines(boolean close) {
+        if (close) {
+            pathData.append('Z').append(" ");
+        }
+
         finalizePath();
     }
 
@@ -257,7 +261,10 @@ public class CanvasShapeExporter extends ShapeExporterBase {
             if (img != null) {
                 fillWidth = img.getWidth();
                 fillHeight = img.getHeight();
-                colorTransform.apply(img);
+                if (colorTransform != null) {
+                    colorTransform.apply(img);
+                }
+
                 if (matrix != null) {
                     fillMatrix = matrix;
                 }
@@ -275,7 +282,7 @@ public class CanvasShapeExporter extends ShapeExporterBase {
     }
 
     @Override
-    public void lineStyle(double thickness, RGB color, boolean pixelHinting, String scaleMode, int startCaps, int endCaps, int joints, int miterLimit) {
+    public void lineStyle(double thickness, RGB color, boolean pixelHinting, String scaleMode, int startCaps, int endCaps, int joints, float miterLimit) {
         finalizePath();
         thickness /= SWF.unitDivisor;
         strokeData.append("\tvar scaleMode = \"").append(scaleMode).append("\";\r\n");

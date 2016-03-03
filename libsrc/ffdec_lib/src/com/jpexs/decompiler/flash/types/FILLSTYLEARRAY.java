@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,6 +17,7 @@
 package com.jpexs.decompiler.flash.types;
 
 import com.jpexs.decompiler.flash.tags.base.NeedsCharacters;
+import com.jpexs.decompiler.flash.types.annotations.SWFArray;
 import java.io.Serializable;
 import java.util.Set;
 
@@ -26,6 +27,7 @@ import java.util.Set;
  */
 public class FILLSTYLEARRAY implements NeedsCharacters, Serializable {
 
+    @SWFArray(value = "fillStyle")
     public FILLSTYLE[] fillStyles;
 
     @Override

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,6 +42,7 @@ public class ActionScript2Test extends ActionScript2TestBase {
     public void init() throws IOException, InterruptedException {
         //Main.initLogging(false);
         Configuration.autoDeobfuscate.set(false);
+        Configuration.simplifyExpressions.set(false);
         Configuration.decompile.set(true);
         Configuration.registerNameFormat.set("_loc%d_");
         swf = new SWF(new BufferedInputStream(new FileInputStream("testdata/as2/as2.swf")), false);
@@ -66,7 +67,7 @@ public class ActionScript2Test extends ActionScript2TestBase {
         int f = 0;
         DoActionTag lastDoa = null;
 
-        for (Tag t : swf.tags) {
+        for (Tag t : swf.getTags()) {
             if (t instanceof DoActionTag) {
                 lastDoa = (DoActionTag) t;
             }
@@ -802,6 +803,46 @@ public class ActionScript2Test extends ActionScript2TestBase {
                 + "var c = ~a;\r\n"
                 + "var d = ~(a + c);\r\n"
                 + "var e = - c;\r\n"
+        );
+    }
+
+    @Test
+    public void frame61_switchDefaultTest() {
+        compareSrc(61, "trace(\"switchDefaultTest\");\r\n"
+                + "var k = 5;\r\n"
+                + "switch(k)\r\n"
+                + "{\r\n"
+                + "case 5:\r\n"
+                + "default:\r\n"
+                + "trace(\"default 5\");\r\n"
+                + "case 6:\r\n"
+                + "trace(\"default 5,6\");\r\n"
+                + "break;\r\n"
+                + "case 7:\r\n"
+                + "trace(\"7\");\r\n"
+                + "}\r\n"
+                + "trace(\"afterSwitch\");\r\n"
+        );
+    }
+
+    @Test
+    public void frame62_Test() {
+        compareSrc(62, "trace(\"switchDefaultTest2\");\r\n"
+                + "var k = 5;\r\n"
+                + "switch(k)\r\n"
+                + "{\r\n"
+                + "case 5:\r\n"
+                + "trace(\"5\");\r\n"
+                + "break;\r\n"
+                + "default:\r\n"
+                + "trace(\"default\");\r\n"
+                + "case 6:\r\n"
+                + "trace(\"default, 6\");\r\n"
+                + "break;\r\n"
+                + "case 7:\r\n"
+                + "trace(\"7\");\r\n"
+                + "}\r\n"
+                + "trace(\"afterSwitch\");\r\n"
         );
     }
 }

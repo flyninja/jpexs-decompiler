@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS
+ *  Copyright (C) 2010-2016 JPEXS
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
@@ -36,6 +37,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
+import java.awt.image.VolatileImage;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
@@ -306,7 +308,7 @@ public class View {
             List<Image> images = new ArrayList<>();
             MyResizableIcon[] icons = MyRibbonApplicationMenuButtonUI.getIcons();
             MyResizableIcon icon = icons[1];
-            int sizes[] = new int[]{16, 32, 48, 256};
+            int sizes[] = new int[]{256, 128, 64, 42, 40, 32, 20, 16};
             for (int size : sizes) {
                 icon.setIconSize(size, size);
                 BufferedImage bi = new BufferedImage(size, size, BufferedImage.TYPE_4BYTE_ABGR);
@@ -335,8 +337,7 @@ public class View {
 
     public static void centerScreen(Window f, int screen) {
 
-        GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice[] allDevices = env.getScreenDevices();
+        GraphicsDevice[] allDevices = getEnv().getScreenDevices();
         int topLeftX, topLeftY, screenX, screenY, windowPosX, windowPosY;
 
         if (screen < allDevices.length && screen > -1) {
@@ -474,22 +475,30 @@ public class View {
 
     public static int showConfirmDialog(final Component parentComponent, String message, final String title, final int optionType, final int messageType, ConfigurationItem<Boolean> showAgainConfig, int defaultOption) {
 
-        JLabel warLabel = new JLabel("<html>" + message.replace("\r\n", "<br>") + "</html>");
-        final JPanel warPanel = new JPanel(new BorderLayout());
-        warPanel.add(warLabel, BorderLayout.CENTER);
-        JCheckBox donotShowAgainCheckBox = new JCheckBox(AppStrings.translate("message.confirm.donotshowagain"));
-        donotShowAgainCheckBox.setSelected(!showAgainConfig.get());
-        warPanel.add(donotShowAgainCheckBox, BorderLayout.SOUTH);
+        JCheckBox donotShowAgainCheckBox = null;
+        JPanel warPanel = null;
+        if (showAgainConfig != null) {
+            if (!showAgainConfig.get()) {
+                return defaultOption;
+            }
 
-        if (donotShowAgainCheckBox.isSelected()) {
-            return defaultOption;
+            JLabel warLabel = new JLabel("<html>" + message.replace("\r\n", "<br>") + "</html>");
+            warPanel = new JPanel(new BorderLayout());
+            warPanel.add(warLabel, BorderLayout.CENTER);
+            donotShowAgainCheckBox = new JCheckBox(AppStrings.translate("message.confirm.donotshowagain"));
+            warPanel.add(donotShowAgainCheckBox, BorderLayout.SOUTH);
         }
 
         final int ret[] = new int[1];
+        final Object messageObj = warPanel == null ? message : warPanel;
         execInEventDispatch(() -> {
-            ret[0] = JOptionPane.showConfirmDialog(parentComponent, warPanel, title, optionType, messageType);
+            ret[0] = JOptionPane.showConfirmDialog(parentComponent, messageObj, title, optionType, messageType);
         });
-        showAgainConfig.set(!donotShowAgainCheckBox.isSelected());
+
+        if (donotShowAgainCheckBox != null) {
+            showAgainConfig.set(!donotShowAgainCheckBox.isSelected());
+        }
+
         return ret[0];
     }
 
@@ -501,22 +510,23 @@ public class View {
 
         execInEventDispatch(() -> {
             Object msg = message;
-            JCheckBox donotShowAgainCheckBox = new JCheckBox(AppStrings.translate("message.confirm.donotshowagain"));
+            JCheckBox donotShowAgainCheckBox = null;
             if (showAgainConfig != null) {
+                if (!showAgainConfig.get()) {
+                    return;
+                }
+
                 JLabel warLabel = new JLabel("<html>" + message.replace("\r\n", "<br>") + "</html>");
                 final JPanel warPanel = new JPanel(new BorderLayout());
                 warPanel.add(warLabel, BorderLayout.CENTER);
-                donotShowAgainCheckBox.setSelected(!showAgainConfig.get());
+                donotShowAgainCheckBox = new JCheckBox(AppStrings.translate("message.confirm.donotshowagain"));
                 warPanel.add(donotShowAgainCheckBox, BorderLayout.SOUTH);
                 msg = warPanel;
-                if (donotShowAgainCheckBox.isSelected()) {
-                    return;
-                }
             }
             final Object fmsg = msg;
 
             JOptionPane.showMessageDialog(parentComponent, fmsg, title, messageType);
-            if (showAgainConfig != null) {
+            if (donotShowAgainCheckBox != null) {
                 showAgainConfig.set(!donotShowAgainCheckBox.isSelected());
             }
         });
@@ -715,5 +725,44 @@ public class View {
         });
 
         return table;
+    }
+
+    private static GraphicsEnvironment env;
+
+    public static GraphicsEnvironment getEnv() {
+        if (env == null) {
+            env = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        }
+        return env;
+    }
+
+    private static GraphicsConfiguration conf;
+
+    public static GraphicsConfiguration getDefaultConfiguration() {
+        if (conf == null) {
+            conf = getEnv().getDefaultScreenDevice().getDefaultConfiguration();
+        }
+        return conf;
+    }
+
+    public static BufferedImage toCompatibleImage(BufferedImage image) {
+        if (image.getColorModel().equals(getDefaultConfiguration().getColorModel())) {
+            return image;
+        }
+
+        return getDefaultConfiguration().createCompatibleImage(image.getWidth(), image.getHeight(), image.getTransparency());
+    }
+
+    public static VolatileImage createRenderImage(int width, int height, int transparency) {
+        VolatileImage image = getDefaultConfiguration().createCompatibleVolatileImage(width, height, transparency);
+
+        int valid = image.validate(getDefaultConfiguration());
+
+        if (valid == VolatileImage.IMAGE_INCOMPATIBLE) {
+            image = createRenderImage(width, height, transparency);
+            return image;
+        }
+
+        return image;
     }
 }

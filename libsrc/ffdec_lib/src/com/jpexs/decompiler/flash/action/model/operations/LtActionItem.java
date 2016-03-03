@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,7 +41,7 @@ public class LtActionItem extends BinaryOpItem implements LogicalOpItem {
     boolean version2;
 
     public LtActionItem(GraphSourceItem instruction, GraphSourceItem lineStartIns, GraphTargetItem leftSide, GraphTargetItem rightSide, boolean version2) {
-        super(instruction, lineStartIns, PRECEDENCE_RELATIONAL, leftSide, rightSide, "<");
+        super(instruction, lineStartIns, PRECEDENCE_RELATIONAL, leftSide, rightSide, "<", "", "");
         this.version2 = version2;
     }
 

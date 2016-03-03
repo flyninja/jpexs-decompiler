@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -53,6 +53,7 @@ public class SourceGeneratorLocalData implements Serializable {
     public String currentClass;
 
     public String superClass = null;
+
     public DottedChain superPkg = null;
 
     public int activationReg = 0;
@@ -72,6 +73,7 @@ public class SourceGeneratorLocalData implements Serializable {
     public boolean subMethod = false;
 
     public int privateNs = 0;
+
     public int protectedNs = 0;
 
     public boolean isStatic = false;

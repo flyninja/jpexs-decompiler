@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS
+ *  Copyright (C) 2010-2016 JPEXS
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -117,7 +117,7 @@ public class TagInfoPanel extends JPanel {
                         try {
                             name = mainPanel.translate(key);
                         } catch (MissingResourceException mes) {
-                            if (Configuration.debugMode.get()) {
+                            if (Configuration._debugMode.get()) {
                                 Logger.getLogger(TagInfoPanel.class.getName()).log(Level.WARNING, "Resource not found: {0}", key);
                             }
                         }

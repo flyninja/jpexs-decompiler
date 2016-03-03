@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -67,6 +67,7 @@ public class DottedChain implements Serializable {
     private final int length;
 
     private final int hash;
+
     private boolean isNull = false;
 
     public static final DottedChain parse(String name) {

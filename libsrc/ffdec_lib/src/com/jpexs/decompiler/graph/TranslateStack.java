@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,6 +30,12 @@ public class TranslateStack extends Stack<GraphTargetItem> {
     private PopItem pop;
 
     private final String path;
+
+    public void simplify() {
+        for (int i = 0; i < size(); i++) {
+            set(i, get(i).simplify(""));
+        }
+    }
 
     public TranslateStack(String path) {
         this.path = path;

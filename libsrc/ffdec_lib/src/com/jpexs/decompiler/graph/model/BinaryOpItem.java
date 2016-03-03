@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,6 +38,9 @@ public abstract class BinaryOpItem extends GraphTargetItem implements BinaryOp {
 
     protected final String operator;
 
+    protected String coerceLeft;
+    protected String coerceRight;
+
     @Override
     public GraphPart getFirstPart() {
         GraphPart fp = leftSide.getFirstPart();
@@ -47,11 +50,21 @@ public abstract class BinaryOpItem extends GraphTargetItem implements BinaryOp {
         return fp;
     }
 
-    public BinaryOpItem(GraphSourceItem instruction, GraphSourceItem lineStartItem, int precedence, GraphTargetItem leftSide, GraphTargetItem rightSide, String operator) {
+    public BinaryOpItem(GraphSourceItem instruction, GraphSourceItem lineStartItem, int precedence, GraphTargetItem leftSide, GraphTargetItem rightSide, String operator, String coerceLeft, String coerceRight) {
         super(instruction, lineStartItem, precedence);
         this.leftSide = leftSide;
         this.rightSide = rightSide;
         this.operator = operator;
+        this.coerceLeft = coerceLeft;
+        this.coerceRight = coerceRight;
+    }
+
+    @Override
+    public GraphTargetItem simplify(String implicitCoerce) {
+        BinaryOpItem r = (BinaryOpItem) clone();
+        r.leftSide = r.leftSide.simplify(coerceLeft);
+        r.rightSide = r.rightSide.simplify(coerceRight);
+        return simplifySomething(r, implicitCoerce);
     }
 
     @Override
@@ -70,7 +83,7 @@ public abstract class BinaryOpItem extends GraphTargetItem implements BinaryOp {
         writer.append(" ");
 
         int rightPrecedence = rightSide.getPrecedence();
-        if (rightPrecedence > precedence && rightPrecedence != GraphTargetItem.NOPRECEDENCE) {
+        if (rightPrecedence >= precedence && rightPrecedence != GraphTargetItem.NOPRECEDENCE) {
             writer.append("(");
             rightSide.toString(writer, localData);
             writer.append(")");
@@ -98,7 +111,7 @@ public abstract class BinaryOpItem extends GraphTargetItem implements BinaryOp {
             return false;
         }
         dependencies.add(rightSide);
-        return leftSide.isCompileTime(dependencies) && rightSide.isCompileTime(dependencies);
+        return leftSide.isConvertedCompileTime(dependencies) && rightSide.isConvertedCompileTime(dependencies);
     }
 
     @Override

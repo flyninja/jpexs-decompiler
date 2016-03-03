@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -79,12 +79,6 @@ public class DefineButton2Tag extends ButtonTag implements ASMSourceContainer {
      * Actions to execute at particular button events
      */
     public List<BUTTONCONDACTION> actions = new ArrayList<>();
-
-    private Timeline timeline;
-
-    private boolean isSingleFrameInitialized;
-
-    private boolean isSingleFrame;
 
     /**
      * Constructor
@@ -173,13 +167,6 @@ public class DefineButton2Tag extends ButtonTag implements ASMSourceContainer {
     }
 
     @Override
-    public void getNeededCharacters(Set<Integer> needed) {
-        for (BUTTONRECORD r : characters) {
-            needed.add(r.characterId);
-        }
-    }
-
-    @Override
     public boolean replaceCharacter(int oldCharacterId, int newCharacterId) {
         boolean modified = false;
         for (int i = 0; i < characters.size(); i++) {
@@ -258,40 +245,7 @@ public class DefineButton2Tag extends ButtonTag implements ASMSourceContainer {
     }
 
     @Override
-    public boolean isSingleFrame() {
-        if (!isSingleFrameInitialized) {
-            initialiteIsSingleFrame();
-        }
-        return isSingleFrame;
-    }
-
-    private synchronized void initialiteIsSingleFrame() {
-        if (!isSingleFrameInitialized) {
-            isSingleFrame = getTimeline().isSingleFrame();
-            isSingleFrameInitialized = true;
-        }
-    }
-
-    @Override
-    public Timeline getTimeline() {
-        if (timeline != null) {
-            return timeline;
-        }
-
-        timeline = new Timeline(swf, this, new ArrayList<>(), buttonId, getRect());
-        initTimeline(timeline);
-        return timeline;
-    }
-
-    @Override
-    public void resetTimeline() {
-        if (timeline != null) {
-            timeline.reset(swf, this, new ArrayList<>(), buttonId, getRect());
-            initTimeline(timeline);
-        }
-    }
-
-    private void initTimeline(Timeline timeline) {
+    protected void initTimeline(Timeline timeline) {
         int maxDepth = 0;
         Frame frameUp = new Frame(timeline, 0);
         Frame frameDown = new Frame(timeline, 0);
@@ -321,7 +275,6 @@ public class DefineButton2Tag extends ButtonTag implements ASMSourceContainer {
             if (r.buttonStateHitTest) {
                 frameHit.layers.put(r.placeDepth, new DepthState(layer, frameHit, false));
             }
-
         }
 
         timeline.addFrame(frameUp);

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, Miron Sadziak, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, Miron Sadziak, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -52,9 +52,12 @@ public class SWFDecompilerPlugin {
 
     private static final List<SWFDecompilerListener> listeners = new ArrayList<>();
 
-    public static void loadPlugins() {
+    public static String[] customParameters = new String[0];
+
+    public static File getPluginsDir() {
+        File pluginPath = null;
+
         try {
-            File pluginPath = null;
             String pluginPathConfig = Configuration.pluginPath.get();
             if (pluginPathConfig != null && !pluginPathConfig.isEmpty()) {
                 pluginPath = new File(pluginPathConfig);
@@ -65,20 +68,25 @@ public class SWFDecompilerPlugin {
                 File dir = f.getAbsoluteFile().getParentFile().getParentFile();
                 pluginPath = new File(Path.combine(dir.getPath(), "plugins")).getCanonicalFile();
             }
-
-            if (pluginPath.exists()) {
-                System.out.println("Loading plugins from " + pluginPath.getPath());
-                File[] files = pluginPath.listFiles();
-                if (files != null) {
-                    for (File file : files) {
-                        System.out.println("Loading plugin: " + file.getPath());
-                        loadPlugin(file.getPath());
-                    }
-                }
-            }
         } catch (IOException | URISyntaxException ex) {
             Logger.getLogger(SWFDecompilerPlugin.class.getName()).log(Level.SEVERE, null, ex);
         }
+        return pluginPath;
+    }
+
+    public static void loadPlugins() {
+        File pluginPath = getPluginsDir();
+        if (pluginPath != null && pluginPath.exists()) {
+            System.out.println("Loading plugins from " + pluginPath.getPath());
+            File[] files = pluginPath.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    System.out.println("Loading plugin: " + file.getPath());
+                    loadPlugin(file.getPath());
+                }
+            }
+        }
+
     }
 
     public static void loadPlugin(String path) {

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,7 +37,7 @@ import java.util.Set;
 public class StringGtActionItem extends BinaryOpItem implements Inverted {
 
     public StringGtActionItem(GraphSourceItem instruction, GraphSourceItem lineStartIns, GraphTargetItem leftSide, GraphTargetItem rightSide) {
-        super(instruction, lineStartIns, PRECEDENCE_RELATIONAL, leftSide, rightSide, "gt");
+        super(instruction, lineStartIns, PRECEDENCE_RELATIONAL, leftSide, rightSide, "gt", "String", "String");
     }
 
     @Override

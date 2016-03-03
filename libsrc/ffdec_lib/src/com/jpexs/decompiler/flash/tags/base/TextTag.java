@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -83,7 +83,7 @@ public abstract class TextTag extends CharacterTag implements DrawableTag {
 
     public abstract List<Integer> getFontIds();
 
-    public abstract HighlightedText getFormattedText();
+    public abstract HighlightedText getFormattedText(boolean ignoreLetterSpacing);
 
     // use the texts from the "texts" argument when it is not null
     public abstract boolean setFormattedText(MissingCharacterHandler missingCharHandler, String formattedText, String[] texts) throws TextParseException;
@@ -392,7 +392,7 @@ public abstract class TextTag extends CharacterTag implements DrawableTag {
         Graphics2D g = (Graphics2D) image.getGraphics();
         Matrix mat = transformation.clone();
         mat = mat.concatenate(new Matrix(textMatrix));
-        BitmapExporter.export(swf, getBorderShape(borderColor, fillColor, rect), null, image, mat, colorTransform);
+        BitmapExporter.export(swf, getBorderShape(borderColor, fillColor, rect), null, image, mat, mat, colorTransform);
     }
 
     public static void drawBorderHtmlCanvas(SWF swf, StringBuilder result, RGB borderColor, RGB fillColor, RECT rect, MATRIX textMatrix, ColorTransform colorTransform, double unitDivisor) {
@@ -424,9 +424,13 @@ public abstract class TextTag extends CharacterTag implements DrawableTag {
         for (TEXTRECORD rec : textRecords) {
             if (rec.styleFlagsHasColor) {
                 if (numText == 2) {
-                    textColor = colorTransform.apply(rec.textColorA.toInt());
+                    textColor = rec.textColorA.toInt();
                 } else {
-                    textColor = colorTransform.apply(rec.textColor.toInt());
+                    textColor = rec.textColor.toInt();
+                }
+
+                if (colorTransform != null) {
+                    textColor = colorTransform.apply(textColor);
                 }
             }
             if (rec.styleFlagsHasFont) {
@@ -466,7 +470,7 @@ public abstract class TextTag extends CharacterTag implements DrawableTag {
                 }
 
                 if (shape != null) {
-                    BitmapExporter.export(swf, shape, textColor2, image, mat, colorTransform);
+                    BitmapExporter.export(swf, shape, textColor2, image, mat, mat, colorTransform);
                     if (SHAPERECORD.DRAW_BOUNDING_BOX) {
                         RGB borderColor = new RGBA(Color.black);
                         RGB fillColor = new RGBA(new Color(255, 255, 255, 0));
@@ -574,9 +578,13 @@ public abstract class TextTag extends CharacterTag implements DrawableTag {
         for (TEXTRECORD rec : textRecords) {
             if (rec.styleFlagsHasColor) {
                 if (numText == 2) {
-                    textColor = colorTransform.apply(rec.textColorA.toInt());
+                    textColor = rec.textColorA.toInt();
                 } else {
-                    textColor = colorTransform.apply(rec.textColor.toInt());
+                    textColor = rec.textColor.toInt();
+                }
+
+                if (colorTransform != null) {
+                    textColor = colorTransform.apply(textColor);
                 }
             }
             if (rec.styleFlagsHasFont) {
@@ -619,9 +627,13 @@ public abstract class TextTag extends CharacterTag implements DrawableTag {
         for (TEXTRECORD rec : textRecords) {
             if (rec.styleFlagsHasColor) {
                 if (numText == 2) {
-                    textColor = colorTransform.apply(rec.textColorA.toInt());
+                    textColor = rec.textColorA.toInt();
                 } else {
-                    textColor = colorTransform.apply(rec.textColor.toInt());
+                    textColor = rec.textColor.toInt();
+                }
+
+                if (colorTransform != null) {
+                    textColor = colorTransform.apply(textColor);
                 }
             }
             if (rec.styleFlagsHasFont) {
@@ -724,7 +736,7 @@ public abstract class TextTag extends CharacterTag implements DrawableTag {
     }
 
     @Override
-    public Shape getOutline(int frame, int time, int ratio, RenderContext renderContext, Matrix transformation) {
+    public Shape getOutline(int frame, int time, int ratio, RenderContext renderContext, Matrix transformation, boolean stroked) {
         RECT r = getBounds();
         Shape shp = new Rectangle.Double(r.Xmin, r.Ymin, r.getWidth(), r.getHeight());
         return transformation.toTransform().createTransformedShape(shp); //TODO: match character shapes (?)

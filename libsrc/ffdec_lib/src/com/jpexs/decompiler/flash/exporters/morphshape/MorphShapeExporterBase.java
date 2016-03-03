@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -199,12 +199,10 @@ public abstract class MorphShapeExporterBase implements IMorphShapeExporter {
                     if (straightEdgeRecord.generalLineFlag) {
                         xPos += straightEdgeRecord.deltaX;
                         yPos += straightEdgeRecord.deltaY;
+                    } else if (straightEdgeRecord.vertLineFlag) {
+                        yPos += straightEdgeRecord.deltaY;
                     } else {
-                        if (straightEdgeRecord.vertLineFlag) {
-                            yPos += straightEdgeRecord.deltaY;
-                        } else {
-                            xPos += straightEdgeRecord.deltaX;
-                        }
+                        xPos += straightEdgeRecord.deltaX;
                     }
 
                     StraightEdgeRecord straightEdgeRecordEnd = (StraightEdgeRecord) shapeRecordEnd;
@@ -213,12 +211,10 @@ public abstract class MorphShapeExporterBase implements IMorphShapeExporter {
                     if (straightEdgeRecordEnd.generalLineFlag) {
                         xPosEnd += straightEdgeRecordEnd.deltaX;
                         yPosEnd += straightEdgeRecordEnd.deltaY;
+                    } else if (straightEdgeRecordEnd.vertLineFlag) {
+                        yPosEnd += straightEdgeRecordEnd.deltaY;
                     } else {
-                        if (straightEdgeRecordEnd.vertLineFlag) {
-                            yPosEnd += straightEdgeRecordEnd.deltaY;
-                        } else {
-                            xPosEnd += straightEdgeRecordEnd.deltaX;
-                        }
+                        xPosEnd += straightEdgeRecordEnd.deltaX;
                     }
 
                     subPath.add(new StraightMorphEdge(xPosFrom, yPosFrom, xPos, yPos, xPosEndFrom, yPosEndFrom, xPosEnd, yPosEnd, currentLineStyleIdx, currentFillStyleIdx1));
@@ -309,7 +305,11 @@ public abstract class MorphShapeExporterBase implements IMorphShapeExporter {
                         switch (fillStyle.fillStyleType) {
                             case FILLSTYLE.SOLID:
                                 // Solid fill
-                                beginFill(colorTransform.apply(fillStyle.color), colorTransform.apply(fillStyleEnd.color));
+                                if (colorTransform == null) {
+                                    beginFill(fillStyle.color, fillStyleEnd.color);
+                                } else {
+                                    beginFill(colorTransform.apply(fillStyle.color), colorTransform.apply(fillStyleEnd.color));
+                                }
                                 break;
                             case FILLSTYLE.LINEAR_GRADIENT:
                             case FILLSTYLE.RADIAL_GRADIENT:
@@ -319,8 +319,8 @@ public abstract class MorphShapeExporterBase implements IMorphShapeExporter {
                                 matrixEnd = new Matrix(fillStyleEnd.gradientMatrix);
                                 beginGradientFill(
                                         fillStyle.fillStyleType,
-                                        colorTransform.apply(fillStyle.gradient.gradientRecords),
-                                        colorTransform.apply(fillStyleEnd.gradient.gradientRecords),
+                                        colorTransform == null ? fillStyle.gradient.gradientRecords : colorTransform.apply(fillStyle.gradient.gradientRecords),
+                                        colorTransform == null ? fillStyleEnd.gradient.gradientRecords : colorTransform.apply(fillStyleEnd.gradient.gradientRecords),
                                         matrix,
                                         matrixEnd,
                                         fillStyle.gradient.spreadMode,
@@ -397,7 +397,7 @@ public abstract class MorphShapeExporterBase implements IMorphShapeExporter {
                         int startCapStyle = LINESTYLE2.ROUND_CAP;
                         int endCapStyle = LINESTYLE2.ROUND_CAP;
                         int joinStyle = LINESTYLE2.ROUND_JOIN;
-                        int miterLimitFactor = 3;
+                        float miterLimitFactor = 3f;
                         boolean hasFillFlag = false;
                         if (lineStyle instanceof LINESTYLE2) {
                             LINESTYLE2 lineStyle2 = (LINESTYLE2) lineStyle;
@@ -418,8 +418,8 @@ public abstract class MorphShapeExporterBase implements IMorphShapeExporter {
                         lineStyle(
                                 lineStyle.width,
                                 lineStyleEnd.width,
-                                colorTransform.apply(lineStyle.color),
-                                colorTransform.apply(lineStyleEnd.color),
+                                colorTransform == null ? lineStyle.color : colorTransform.apply(lineStyle.color),
+                                colorTransform == null ? lineStyleEnd.color : colorTransform.apply(lineStyleEnd.color),
                                 pixelHintingFlag,
                                 scaleMode,
                                 startCapStyle,

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,10 @@ package com.jpexs.decompiler.flash.action.swf4;
 
 import com.jpexs.decompiler.flash.BaseLocalData;
 import com.jpexs.decompiler.flash.action.Action;
+import com.jpexs.decompiler.flash.action.ActionScriptObject;
+import com.jpexs.decompiler.flash.action.LocalDataArea;
 import com.jpexs.decompiler.flash.action.model.CloneSpriteActionItem;
+import com.jpexs.decompiler.flash.ecma.EcmaScript;
 import com.jpexs.decompiler.flash.types.annotations.SWFVersion;
 import com.jpexs.decompiler.graph.GraphSourceItem;
 import com.jpexs.decompiler.graph.GraphTargetItem;
@@ -40,6 +43,19 @@ public class ActionCloneSprite extends Action {
     @Override
     public String toString() {
         return "CloneSprite";
+    }
+
+    @Override
+    public boolean execute(LocalDataArea lda) {
+        if (lda.stack.size() < 3) {
+            return false;
+        }
+        int depth = EcmaScript.toInt32(lda.stack.pop());
+        String source = EcmaScript.toString(lda.stack.pop());
+        String target = EcmaScript.toString(lda.stack.pop());
+        lda.stage.setMember(target, ((ActionScriptObject) lda.stage.getMember(source)).clone());
+        lda.stage.addToDisplayList(depth, lda.stage.getMember(target));
+        return true;
     }
 
     @Override

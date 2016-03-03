@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,7 @@ import com.jpexs.decompiler.flash.BaseLocalData;
 import com.jpexs.decompiler.flash.SWFInputStream;
 import com.jpexs.decompiler.flash.SWFOutputStream;
 import com.jpexs.decompiler.flash.action.Action;
+import com.jpexs.decompiler.flash.action.LocalDataArea;
 import com.jpexs.decompiler.flash.action.StoreTypeAction;
 import com.jpexs.decompiler.flash.action.model.ConstantPool;
 import com.jpexs.decompiler.flash.action.model.DecrementActionItem;
@@ -49,6 +50,17 @@ import java.util.List;
 public class ActionStoreRegister extends Action implements StoreTypeAction {
 
     public int registerNumber;
+
+    @Override
+    public boolean execute(LocalDataArea lda) {
+        if (lda.stack.size() < 1) {
+            return false;
+        }
+
+        Object value = lda.pop();
+        lda.localRegisters.put(registerNumber, value);
+        return true;
+    }
 
     public ActionStoreRegister(int registerNumber) {
         super(0x87, 1);

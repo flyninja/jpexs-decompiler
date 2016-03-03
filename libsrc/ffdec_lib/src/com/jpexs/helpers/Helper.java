@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1109,8 +1109,8 @@ public class Helper {
     }
 
     public static String escapeHTML(String text) {
-        String[] from = new String[]{"&", "<", ">", "\"", "'", "/"};
-        String[] to = new String[]{"&amp;", "&lt;", "&gt;", "&quot;", "&#x27;", "&#x2F;"};
+        String[] from = new String[]{"&", "<", ">", "\"", "'", "/", "\r\n", "\r", "\n"};
+        String[] to = new String[]{"&amp;", "&lt;", "&gt;", "&quot;", "&#x27;", "&#x2F;", "&#xD;", "&#xD;", "&#xD;"};
         for (int i = 0; i < from.length; i++) {
             text = text.replace(from[i], to[i]);
         }
@@ -1349,6 +1349,10 @@ public class Helper {
         return DatatypeConverter.printBase64Binary(data);
     }
 
+    public static byte[] base64StringToByteArray(String base64) {
+        return DatatypeConverter.parseBase64Binary(base64);
+    }
+
     /**
      * Formats double value (removes .0 from end)
      *
@@ -1401,5 +1405,27 @@ public class Helper {
         a++;
         lastIds.put(str, a);
         return str + "_" + a;
+    }
+
+    public static boolean is64BitJre() {
+        String prop = System.getProperty("sun.arch.data.model");
+        return prop != null && prop.contains("64");
+
+    }
+
+    public static boolean is64BitOs() {
+        String arch = System.getenv("PROCESSOR_ARCHITECTURE");
+        String wow64Arch = System.getenv("PROCESSOR_ARCHITEW6432");
+
+        if (arch == null) {
+            return false;
+        }
+
+        return arch.endsWith("64")
+                || wow64Arch != null && wow64Arch.endsWith("64");
+    }
+
+    public static void showOutOfMemoryWarning() {
+
     }
 }

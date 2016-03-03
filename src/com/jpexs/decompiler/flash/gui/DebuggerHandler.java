@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 JPEXS, All rights reserved.
+ * Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -47,6 +47,7 @@ import com.jpexs.debugger.flash.messages.out.OutGetSwf;
 import com.jpexs.debugger.flash.messages.out.OutPlay;
 import com.jpexs.debugger.flash.messages.out.OutProcessedTag;
 import com.jpexs.debugger.flash.messages.out.OutRewind;
+import com.jpexs.debugger.flash.messages.out.OutSwfInfo;
 import com.jpexs.decompiler.flash.configuration.Configuration;
 import com.jpexs.decompiler.graph.DottedChain;
 import java.io.IOException;
@@ -78,10 +79,14 @@ public class DebuggerHandler implements DebugConnectionListener {
 
     private Map<Integer, String> modulePaths = new HashMap<>();
 
+    private Map<Integer, Integer> moduleToSwfIndex = new HashMap<>();
+
     private Map<String, Integer> scriptToModule = new HashMap<>();
 
     private Map<Integer, Integer> moduleToTraitIndex = new HashMap<>();
+
     private Map<Integer, Integer> moduleToClassIndex = new HashMap<>();
+
     private Map<Integer, Integer> moduleToMethodIndex = new HashMap<>();
 
     private Map<String, Set<Integer>> toAddBPointMap = new HashMap<>();
@@ -293,6 +298,7 @@ public class DebuggerHandler implements DebugConnectionListener {
     }
 
     private InFrame frame;
+
     private InConstantPool pool;
 
     private InBreakAtExt breakInfo;
@@ -510,49 +516,64 @@ public class DebuggerHandler implements DebugConnectionListener {
             }
         });
 
+        swfs.clear();
+
         Map<Integer, String> moduleNames = new HashMap<>();
+
+        final Pattern patAS3 = Pattern.compile("^(.*);(.*);(.*)\\.as$");
+        final Pattern patAS3PCode = Pattern.compile("^#PCODE abc:([0-9]+),script:([0-9]+),class:(-?[0-9]+),trait:(-?[0-9]+),method:([0-9]+),body:([0-9]+);(.*)$");
 
         try {
 
-            int numScript = con.getMessage(InNumScript.class).num;
-            for (int i = 0; i < numScript; i++) {
-                InScript sc = con.getMessage(InScript.class);
-                moduleNames.put(sc.module, sc.name);
-            }
+            con.addMessageListener(new DebugMessageListener<InNumScript>() {
+                @Override
+                public void message(InNumScript t) {
+                    con.dropMessage(t);
+                }
+            });
 
             modulePaths = new HashMap<>();
             scriptToModule = new HashMap<>();
+
+            con.addMessageListener(new DebugMessageListener<InScript>() {
+                @Override
+                public void message(InScript sc) {
+                    moduleNames.put(sc.module, sc.name);
+                    moduleToSwfIndex.put(sc.module, sc.swfIndex);
+                    int file = sc.module;
+                    String name = sc.name;
+                    String[] parts = name.split(";");
+
+                    Matcher m;
+                    if ((m = patAS3.matcher(name)).matches()) {
+                        String clsName = m.group(3);
+                        String pkg = m.group(2).replace("\\", ".");
+                        m = patAS3PCode.matcher(name);
+
+                        if (m.matches()) {
+                            moduleToClassIndex.put(file, Integer.parseInt(m.group(3)));
+                            moduleToTraitIndex.put(file, Integer.parseInt(m.group(4)));
+                            moduleToMethodIndex.put(file, Integer.parseInt(m.group(5)));
+                            name = DottedChain.parse(pkg).add(clsName).toString();
+                            name = "#PCODE abc:" + m.group(1) + ",body:" + m.group(6) + ";" + name;
+                        } else {
+                            name = DottedChain.parse(pkg).add(clsName).toString();
+                        }
+                    }
+                    modulePaths.put(file, name);
+                    scriptToModule.put(name, file);
+                    con.dropMessage(sc);
+                }
+            });
+
+            /*int numScript = con.getMessage(InNumScript.class).num;
+             for (int i = 0; i < numScript; i++) {
+             InScript sc = con.getMessage(InScript.class);
+             moduleNames.put(sc.module, sc.name);
+             }*/
             //Pattern patMainFrame = Pattern.compile("^Actions for Scene ([0-9]+): Frame ([0-9]+) of Layer Name .*$");
             //Pattern patSymbol = Pattern.compile("^Actions for Symbol ([0-9]+): Frame ([0-9]+) of Layer Name .*$");
             //Pattern patAS2 = Pattern.compile("^([^:]+): .*\\.as$");
-            Pattern patAS3 = Pattern.compile("^(.*);(.*);(.*)\\.as$");
-            //"abc:" + abcIndex + ",script:" + scriptIndex + ",class:" + classIndex + ",trait:" + traitIndex + ",method:" 
-            Pattern patAS3PCode = Pattern.compile("^#PCODE abc:([0-9]+),script:([0-9]+),class:(-?[0-9]+),trait:(-?[0-9]+),method:([0-9]+),body:([0-9]+);(.*)$");
-
-            for (int file : moduleNames.keySet()) {
-                String name = moduleNames.get(file);
-                String[] parts = name.split(";");
-
-                Matcher m;
-                if ((m = patAS3.matcher(name)).matches()) {
-                    String clsName = m.group(3);
-                    String pkg = m.group(2).replace("\\", ".");
-                    m = patAS3PCode.matcher(name);
-
-                    if (m.matches()) {
-                        moduleToClassIndex.put(file, Integer.parseInt(m.group(3)));
-                        moduleToTraitIndex.put(file, Integer.parseInt(m.group(4)));
-                        moduleToMethodIndex.put(file, Integer.parseInt(m.group(5)));
-                        name = DottedChain.parse(pkg).add(clsName).toString();
-                        name = "#PCODE abc:" + m.group(1) + ",body:" + m.group(6) + ";" + name;
-                    } else {
-                        name = DottedChain.parse(pkg).add(clsName).toString();
-                    }
-                }
-                modulePaths.put(file, name);
-                scriptToModule.put(name, file);
-            }
-
             //con.getMessage(InSetBreakpoint.class);
             commands = new DebuggerCommands(con);
 
@@ -577,9 +598,28 @@ public class DebuggerHandler implements DebugConnectionListener {
             }
             commands.squelch(true);
 
-            swfs = commands.getSwfInfo(1);
-            con.sendMessage(new OutGetSwf(con, 0), InGetSwf.class);
-            InGetSwd iswd = con.sendMessage(new OutGetSwd(con, 0), InGetSwd.class);
+            con.writeMessage(new OutSwfInfo(con, 0));
+            con.addMessageListener(new DebugMessageListener<InSwfInfo>() {
+                @Override
+                public void message(InSwfInfo t) {
+                    for (InSwfInfo.SwfInfo s : t.swfInfos) {
+                        swfs.add(s);
+                        View.execInEventDispatchLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    con.sendMessage(new OutGetSwf(con, (int) s.index), InGetSwf.class);
+                                    con.sendMessage(new OutGetSwd(con, (int) s.index), InGetSwd.class);
+                                } catch (IOException ex) {
+                                    //ignore
+                                }
+                            }
+                        });
+                    }
+                    con.dropMessage(t);
+                }
+
+            });
 
             InSetBreakpoint isb = con.getMessage(InSetBreakpoint.class);
             synchronized (this) {

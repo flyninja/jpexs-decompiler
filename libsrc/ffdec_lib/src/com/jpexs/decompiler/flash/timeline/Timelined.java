@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,6 +16,8 @@
  */
 package com.jpexs.decompiler.flash.timeline;
 
+import com.jpexs.decompiler.flash.ReadOnlyTagList;
+import com.jpexs.decompiler.flash.tags.Tag;
 import com.jpexs.decompiler.flash.tags.base.BoundedTag;
 
 /**
@@ -27,4 +29,16 @@ public interface Timelined extends BoundedTag {
     public Timeline getTimeline();
 
     public void resetTimeline();
+
+    public void setModified(boolean value);
+
+    public ReadOnlyTagList getTags();
+
+    public void removeTag(int index);
+
+    public void removeTag(Tag tag);
+
+    public void addTag(Tag tag);
+
+    public void addTag(int index, Tag tag);
 }

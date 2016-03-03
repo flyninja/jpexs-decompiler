@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,7 +30,7 @@ import java.util.Set;
 public class InActionItem extends BinaryOpItem {
 
     public InActionItem(GraphSourceItem instruction, GraphSourceItem lineStartIns, ActionItem name, ActionItem object) {
-        super(instruction, lineStartIns, PRECEDENCE_RELATIONAL, name, object, "in");
+        super(instruction, lineStartIns, PRECEDENCE_RELATIONAL, name, object, "in", "", "");
     }
 
     @Override

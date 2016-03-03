@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,6 +16,7 @@
  */
 package com.jpexs.decompiler.graph.model;
 
+import com.jpexs.decompiler.flash.abc.avm2.model.ThisAVM2Item;
 import com.jpexs.decompiler.flash.helpers.GraphTextWriter;
 import com.jpexs.decompiler.graph.GraphSourceItem;
 import com.jpexs.decompiler.graph.GraphSourceItemPos;
@@ -30,10 +31,19 @@ import java.util.Set;
 public abstract class UnaryOpItem extends GraphTargetItem implements UnaryOp {
 
     public String operator;
+    protected String coerce;
 
-    public UnaryOpItem(GraphSourceItem instruction, GraphSourceItem lineStartItem, int precedence, GraphTargetItem value, String operator) {
+    public UnaryOpItem(GraphSourceItem instruction, GraphSourceItem lineStartItem, int precedence, GraphTargetItem value, String operator, String coerce) {
         super(instruction, lineStartItem, precedence, value);
         this.operator = operator;
+        this.coerce = coerce;
+    }
+
+    @Override
+    public GraphTargetItem simplify(String implicitCoerce) {
+        GraphTargetItem r = clone();
+        r.value = r.value.simplify(coerce);
+        return simplifySomething(r, implicitCoerce);
     }
 
     @Override
@@ -59,7 +69,7 @@ public abstract class UnaryOpItem extends GraphTargetItem implements UnaryOp {
             return false;
         }
         dependencies.add(value);
-        return value.isCompileTime(dependencies);
+        return value.isConvertedCompileTime(dependencies);
     }
 
     @Override

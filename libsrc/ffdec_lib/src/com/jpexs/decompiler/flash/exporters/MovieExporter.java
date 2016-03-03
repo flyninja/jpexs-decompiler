@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,6 +18,7 @@ package com.jpexs.decompiler.flash.exporters;
 
 import com.jpexs.decompiler.flash.AbortRetryIgnoreHandler;
 import com.jpexs.decompiler.flash.EventListener;
+import com.jpexs.decompiler.flash.ReadOnlyTagList;
 import com.jpexs.decompiler.flash.RetryTask;
 import com.jpexs.decompiler.flash.SWF;
 import com.jpexs.decompiler.flash.SWFInputStream;
@@ -49,7 +50,7 @@ import java.util.List;
  */
 public class MovieExporter {
 
-    public List<File> exportMovies(AbortRetryIgnoreHandler handler, String outdir, List<Tag> tags, final MovieExportSettings settings, EventListener evl) throws IOException, InterruptedException {
+    public List<File> exportMovies(AbortRetryIgnoreHandler handler, String outdir, ReadOnlyTagList tags, final MovieExportSettings settings, EventListener evl) throws IOException, InterruptedException {
         List<File> ret = new ArrayList<>();
         if (tags.isEmpty()) {
             return ret;
@@ -97,7 +98,7 @@ public class MovieExporter {
     public byte[] exportMovie(DefineVideoStreamTag videoStream, MovieExportMode mode) throws IOException {
         SWF swf = videoStream.getSwf();
         HashMap<Integer, VideoFrameTag> frames = new HashMap<>();
-        SWF.populateVideoFrames(videoStream.characterID, swf.tags, frames);
+        SWF.populateVideoFrames(videoStream.characterID, swf.getTags(), frames);
         if (frames.isEmpty()) {
             return SWFInputStream.BYTE_ARRAY_EMPTY;
         }

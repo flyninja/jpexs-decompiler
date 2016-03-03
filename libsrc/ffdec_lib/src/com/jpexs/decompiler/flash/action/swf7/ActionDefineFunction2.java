@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,9 @@ import com.jpexs.decompiler.flash.SWFInputStream;
 import com.jpexs.decompiler.flash.SWFOutputStream;
 import com.jpexs.decompiler.flash.action.Action;
 import com.jpexs.decompiler.flash.action.ActionList;
+import com.jpexs.decompiler.flash.action.ActionScriptFunction;
+import com.jpexs.decompiler.flash.action.ActionScriptObject;
+import com.jpexs.decompiler.flash.action.LocalDataArea;
 import com.jpexs.decompiler.flash.action.model.FunctionActionItem;
 import com.jpexs.decompiler.flash.action.parser.ActionParseException;
 import com.jpexs.decompiler.flash.action.parser.pcode.FlasmLexer;
@@ -84,6 +87,15 @@ public class ActionDefineFunction2 extends Action implements GraphSourceItemCont
     private int version;
 
     public List<String> constantPool;
+
+    @Override
+    public boolean execute(LocalDataArea lda) {
+        ActionScriptFunction f = new ActionScriptFunction(fileOffset, codeSize, functionName, paramNames, getRegNames());
+        lda.stack.push(f);
+        lda.functions.add(f);
+        ((ActionScriptObject) lda.target).setMember(functionName, f);
+        return true;
+    }
 
     public ActionDefineFunction2(String functionName, boolean preloadParentFlag, boolean preloadRootFlag, boolean suppressSuperFlag, boolean preloadSuperFlag, boolean suppressArgumentsFlag, boolean preloadArgumentsFlag, boolean suppressThisFlag, boolean preloadThisFlag, boolean preloadGlobalFlag, int registerCount, int codeSize, int version, List<String> paramNames, List<Integer> paramRegisters) {
         super(0x8E, 0);

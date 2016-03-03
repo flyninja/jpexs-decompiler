@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -159,7 +159,6 @@ public class Configuration {
     public static final ConfigurationItem<String> overrideTextExportFileName = null;
 
     @ConfigurationDefaultBoolean(false)
-    @ConfigurationCategory("debug")
     public static final ConfigurationItem<Boolean> useDetailedLogging = null;
 
     /**
@@ -167,12 +166,12 @@ public class Configuration {
      * recompiled
      */
     @ConfigurationDefaultBoolean(false)
-    @ConfigurationCategory("debug")
-    public static final ConfigurationItem<Boolean> debugMode = null;
+    @ConfigurationInternal
+    public static final ConfigurationItem<Boolean> _debugMode = null;
 
     @ConfigurationDefaultBoolean(false)
-    @ConfigurationCategory("debug")
-    public static final ConfigurationItem<Boolean> showDebugMenu = null;
+    @ConfigurationInternal
+    public static final ConfigurationItem<Boolean> _showDebugMenu = null;
 
     /**
      * Turn off resolving constants in ActionScript 2
@@ -215,15 +214,14 @@ public class Configuration {
     public static final ConfigurationItem<Boolean> displayFileName = null;
 
     @ConfigurationDefaultBoolean(false)
-    @ConfigurationCategory("debug")
-    public static final ConfigurationItem<Boolean> debugCopy = null;
+    @ConfigurationInternal
+    public static final ConfigurationItem<Boolean> _debugCopy = null;
 
     @ConfigurationDefaultBoolean(false)
-    @ConfigurationCategory("debug")
     public static final ConfigurationItem<Boolean> dumpTags = null;
 
     @ConfigurationDefaultBoolean(true)
-    @ConfigurationCategory("debug")
+    @ConfigurationCategory("export")
     public static final ConfigurationItem<Boolean> setFFDecVersionInExportedFont = null;
 
     @ConfigurationDefaultInt(60)
@@ -283,27 +281,38 @@ public class Configuration {
 
     @ConfigurationDefaultDouble(0.5)
     @ConfigurationName("gui.avm2.splitPane.dividerLocationPercent")
+    @ConfigurationInternal
     public static final ConfigurationItem<Double> guiAvm2SplitPaneDividerLocationPercent = null;
 
     @ConfigurationDefaultDouble(0.5)
     @ConfigurationName("gui.actionSplitPane.dividerLocationPercent")
+    @ConfigurationInternal
     public static final ConfigurationItem<Double> guiActionSplitPaneDividerLocationPercent = null;
 
     @ConfigurationDefaultDouble(0.5)
     @ConfigurationName("gui.previewSplitPane.dividerLocationPercent")
+    @ConfigurationInternal
     public static final ConfigurationItem<Double> guiPreviewSplitPaneDividerLocationPercent = null;
 
     @ConfigurationDefaultDouble(0.3333333333)
     @ConfigurationName("gui.splitPane1.dividerLocationPercent")
+    @ConfigurationInternal
     public static final ConfigurationItem<Double> guiSplitPane1DividerLocationPercent = null;
 
     @ConfigurationDefaultDouble(0.6)
     @ConfigurationName("gui.splitPane2.dividerLocationPercent")
+    @ConfigurationInternal
     public static final ConfigurationItem<Double> guiSplitPane2DividerLocationPercent = null;
 
     @ConfigurationDefaultDouble(0.5)
     @ConfigurationName("gui.timeLineSplitPane.dividerLocationPercent")
+    @ConfigurationInternal
     public static final ConfigurationItem<Double> guiTimeLineSplitPaneDividerLocationPercent = null;
+
+    @ConfigurationDefaultDouble(0.6)
+    @ConfigurationName("gui.dump.splitPane.dividerLocationPercent")
+    @ConfigurationInternal
+    public static final ConfigurationItem<Double> guiDumpSplitPaneDividerLocationPercent = null;
 
     @ConfigurationDefaultString("com.jpexs.decompiler.flash.gui.OceanicSkin")
     @ConfigurationName("gui.skin")
@@ -395,6 +404,10 @@ public class Configuration {
     @ConfigurationCategory("import")
     public static final ConfigurationItem<TextImportResizeTextBoundsMode> textImportResizeTextBoundsMode = null;
 
+    @ConfigurationDefaultBoolean(false)
+    @ConfigurationCategory("import")
+    public static final ConfigurationItem<Boolean> resetLetterSpacingOnTextImport = null;
+
     @ConfigurationDefaultBoolean(true)
     @ConfigurationName("warning.experimental.as12edit")
     @ConfigurationCategory("script")
@@ -425,7 +438,7 @@ public class Configuration {
     public static final ConfigurationItem<Integer> lzmaFastBytes = null;
 
     @ConfigurationDefaultBoolean(false)
-    @ConfigurationCategory("debug")
+    @ConfigurationCategory("script")
     public static final ConfigurationItem<Boolean> showMethodBodyId = null;
 
     @ConfigurationDefaultDouble(1.0)
@@ -523,10 +536,12 @@ public class Configuration {
 
     @ConfigurationDefaultDouble(0.7)
     @ConfigurationName("gui.avm2.splitPane.vars.dividerLocationPercent")
+    @ConfigurationInternal
     public static final ConfigurationItem<Double> guiAvm2VarsSplitPaneDividerLocationPercent = null;
 
     @ConfigurationDefaultDouble(0.7)
     @ConfigurationName("gui.action.splitPane.vars.dividerLocationPercent")
+    @ConfigurationInternal
     public static final ConfigurationItem<Double> guiActionVarsSplitPaneDividerLocationPercent = null;
 
     @ConfigurationDefaultBoolean(true)
@@ -538,10 +553,50 @@ public class Configuration {
     @ConfigurationCategory("import")
     public static final ConfigurationItem<Boolean> warningSvgImport = null;
 
+    @ConfigurationDefaultBoolean(true)
+    @ConfigurationName("warning.hexViewNotUpToDate")
+    @ConfigurationCategory("import")
+    public static final ConfigurationItem<Boolean> warningHexViewNotUpToDate = null;
+
     @ConfigurationDefaultBoolean(false)
     @ConfigurationName("shapeImport.useNonSmoothedFill")
     @ConfigurationCategory("import")
     public static final ConfigurationItem<Boolean> shapeImportUseNonSmoothedFill = null;
+
+    @ConfigurationDefaultBoolean(false)
+    @ConfigurationCategory("display")
+    @ConfigurationName("internalFlashViewer.execute.as12")
+    public static final ConfigurationItem<Boolean> internalFlashViewerExecuteAs12 = null;
+
+    @ConfigurationDefaultBoolean(false)
+    @ConfigurationCategory("script")
+    public static final ConfigurationItem<Boolean> displayDupInstructions = null;
+
+    @ConfigurationDefaultBoolean(true)
+    @ConfigurationCategory("script")
+    public static final ConfigurationItem<Boolean> useRegExprLiteral = null;
+
+    @ConfigurationDefaultBoolean(true)
+    @ConfigurationCategory("script")
+    public static final ConfigurationItem<Boolean> handleSkinPartsAutomatically = null;
+
+    @ConfigurationDefaultBoolean(false)
+    //@ConfigurationCategory("script")
+    @ConfigurationInternal
+    public static final ConfigurationItem<Boolean> _ignoreAdditionalFlexClasses = null;
+
+    @ConfigurationDefaultBoolean(false)
+    //@ConfigurationCategory("script")
+    @ConfigurationInternal
+    public static final ConfigurationItem<Boolean> _enableFlexExport = null;
+
+    @ConfigurationDefaultBoolean(false)
+    @ConfigurationCategory("script")
+    public static final ConfigurationItem<Boolean> simplifyExpressions = null;
+
+    @ConfigurationDefaultBoolean(false)
+    @ConfigurationInternal
+    public static final ConfigurationItem<Boolean> hwAcceleratedGraphics = null;
 
     private enum OSId {
 
@@ -745,7 +800,7 @@ public class Configuration {
         setConfigurationFields();
         if (useDetailedLogging.get()) {
             logLevel = Level.FINEST;
-        } else if (debugMode.get()) {
+        } else if (_debugMode.get()) {
             logLevel = Level.INFO;
         } else {
             logLevel = Level.WARNING;

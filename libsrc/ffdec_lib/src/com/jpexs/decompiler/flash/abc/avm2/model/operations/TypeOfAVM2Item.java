@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,7 +37,7 @@ import java.util.Set;
 public class TypeOfAVM2Item extends UnaryOpItem {
 
     public TypeOfAVM2Item(GraphSourceItem instruction, GraphSourceItem lineStartIns, GraphTargetItem value) {
-        super(instruction, lineStartIns, PRECEDENCE_UNARY, value, "typeof ");
+        super(instruction, lineStartIns, PRECEDENCE_UNARY, value, "typeof ", "");
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -226,7 +226,10 @@ public class CanvasMorphShapeExporter extends MorphShapeExporterBase {
             if (img != null) {
                 fillWidth = img.getWidth();
                 fillHeight = img.getHeight();
-                colorTransform.apply(img);
+                if (colorTransform != null) {
+                    colorTransform.apply(img);
+                }
+
                 if (matrix != null) {
                     fillMatrix = matrix;
                     fillMatrixEnd = matrixEnd;
@@ -245,7 +248,7 @@ public class CanvasMorphShapeExporter extends MorphShapeExporterBase {
     }
 
     @Override
-    public void lineStyle(double thickness, double thicknessEnd, RGB color, RGB colorEnd, boolean pixelHinting, String scaleMode, int startCaps, int endCaps, int joints, int miterLimit) {
+    public void lineStyle(double thickness, double thicknessEnd, RGB color, RGB colorEnd, boolean pixelHinting, String scaleMode, int startCaps, int endCaps, int joints, float miterLimit) {
         finalizePath();
         thickness /= SWF.unitDivisor;
         thicknessEnd /= SWF.unitDivisor;

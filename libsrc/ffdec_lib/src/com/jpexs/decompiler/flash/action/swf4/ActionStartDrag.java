@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,6 +18,8 @@ package com.jpexs.decompiler.flash.action.swf4;
 
 import com.jpexs.decompiler.flash.BaseLocalData;
 import com.jpexs.decompiler.flash.action.Action;
+import com.jpexs.decompiler.flash.action.DisplayObject;
+import com.jpexs.decompiler.flash.action.LocalDataArea;
 import com.jpexs.decompiler.flash.action.model.DirectValueActionItem;
 import com.jpexs.decompiler.flash.action.model.StartDragActionItem;
 import com.jpexs.decompiler.flash.types.annotations.SWFVersion;
@@ -41,6 +43,14 @@ public class ActionStartDrag extends Action {
     @Override
     public String toString() {
         return "StartDrag";
+    }
+
+    @Override
+    public boolean execute(LocalDataArea lda) {
+        if (lda.target instanceof DisplayObject) {
+            ((DisplayObject) lda.target).startDrag();
+        }
+        return true;
     }
 
     @Override

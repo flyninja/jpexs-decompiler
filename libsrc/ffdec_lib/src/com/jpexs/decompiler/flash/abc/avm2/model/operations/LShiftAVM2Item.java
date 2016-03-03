@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,11 +19,13 @@ package com.jpexs.decompiler.flash.abc.avm2.model.operations;
 import com.jpexs.decompiler.flash.SourceGeneratorLocalData;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.AVM2Instruction;
 import com.jpexs.decompiler.flash.abc.avm2.instructions.AVM2Instructions;
+import com.jpexs.decompiler.flash.helpers.GraphTextWriter;
 import com.jpexs.decompiler.graph.CompilationException;
 import com.jpexs.decompiler.graph.GraphSourceItem;
 import com.jpexs.decompiler.graph.GraphTargetItem;
 import com.jpexs.decompiler.graph.SourceGenerator;
 import com.jpexs.decompiler.graph.model.BinaryOpItem;
+import com.jpexs.decompiler.graph.model.LocalData;
 import com.jpexs.decompiler.graph.model.UnboundedTypeItem;
 import java.util.List;
 
@@ -34,7 +36,7 @@ import java.util.List;
 public class LShiftAVM2Item extends BinaryOpItem {
 
     public LShiftAVM2Item(GraphSourceItem instruction, GraphSourceItem lineStartIns, GraphTargetItem leftSide, GraphTargetItem rightSide) {
-        super(instruction, lineStartIns, PRECEDENCE_BITWISESHIFT, leftSide, rightSide, "<<");
+        super(instruction, lineStartIns, PRECEDENCE_BITWISESHIFT, leftSide, rightSide, "<<", "Number", "Number");
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS
+ *  Copyright (C) 2010-2016 JPEXS
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,8 +26,8 @@ import com.jpexs.decompiler.flash.tags.base.DrawableTag;
 import com.jpexs.decompiler.flash.tags.base.ImageTag;
 import com.jpexs.decompiler.flash.tags.base.RenderContext;
 import com.jpexs.decompiler.flash.timeline.Frame;
+import com.jpexs.decompiler.flash.timeline.Timeline;
 import com.jpexs.decompiler.flash.treeitems.TreeItem;
-import com.jpexs.decompiler.flash.types.ColorTransform;
 import com.jpexs.decompiler.flash.types.RECT;
 import com.jpexs.helpers.Cache;
 import com.jpexs.helpers.SerializableImage;
@@ -183,7 +183,7 @@ public class FolderPreviewPanel extends JPanel {
         int cols = width / CELL_WIDTH;
         int rows = (int) Math.ceil(items.size() / (float) cols);
         int height = rows * CELL_HEIGHT;
-        return (new Dimension(width, height));
+        return new Dimension(width, height);
     }
 
     @Override
@@ -308,7 +308,15 @@ public class FolderPreviewPanel extends JPanel {
                     zoom = ratio;
                 }
             }
-            imgSrc = SWF.frameToImageGet(swf.getTimeline(), fn.frame, 0, null, 0, rect, new Matrix(), new ColorTransform(), null, true, zoom);
+
+            Timeline timeline = swf.getTimeline();
+            String key = "frame_" + fn.frame + "_" + timeline.id + "_" + zoom;
+            imgSrc = swf.getFromCache(key);
+            if (imgSrc == null) {
+                imgSrc = SWF.frameToImageGet(timeline, fn.frame, fn.frame, null, 0, rect, new Matrix(), new Matrix(), null, null, zoom);
+                swf.putToCache(key, imgSrc);
+            }
+
             width = imgSrc.getWidth();
             height = imgSrc.getHeight();
         } else if (treeItem instanceof ImageTag) {
@@ -356,7 +364,7 @@ public class FolderPreviewPanel extends JPanel {
         image.fillTransparent();
         if (imgSrc == null) {
             DrawableTag drawable = (DrawableTag) treeItem;
-            drawable.toImage(0, 0, 0, new RenderContext(), image, m, new ColorTransform());
+            drawable.toImage(0, 0, 0, new RenderContext(), image, false, m, m, m, null);
         } else {
             Graphics2D g = (Graphics2D) image.getGraphics();
             g.setTransform(m.toTransform());

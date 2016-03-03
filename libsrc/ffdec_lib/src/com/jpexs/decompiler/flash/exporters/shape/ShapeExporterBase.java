@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -190,12 +190,10 @@ public abstract class ShapeExporterBase implements IShapeExporter {
                 if (straightEdgeRecord.generalLineFlag) {
                     xPos += straightEdgeRecord.deltaX;
                     yPos += straightEdgeRecord.deltaY;
+                } else if (straightEdgeRecord.vertLineFlag) {
+                    yPos += straightEdgeRecord.deltaY;
                 } else {
-                    if (straightEdgeRecord.vertLineFlag) {
-                        yPos += straightEdgeRecord.deltaY;
-                    } else {
-                        xPos += straightEdgeRecord.deltaX;
-                    }
+                    xPos += straightEdgeRecord.deltaX;
                 }
                 subPath.add(new StraightEdge(xPosFrom, yPosFrom, xPos, yPos, currentLineStyleIdx, currentFillStyleIdx1));
             } else if (shapeRecord instanceof CurvedEdgeRecord) {
@@ -269,7 +267,7 @@ public abstract class ShapeExporterBase implements IShapeExporter {
                         switch (fillStyle.fillStyleType) {
                             case FILLSTYLE.SOLID:
                                 // Solid fill
-                                beginFill(colorTransform.apply(fillStyle.color));
+                                beginFill(colorTransform == null ? fillStyle.color : colorTransform.apply(fillStyle.color));
                                 break;
                             case FILLSTYLE.LINEAR_GRADIENT:
                             case FILLSTYLE.RADIAL_GRADIENT:
@@ -277,7 +275,7 @@ public abstract class ShapeExporterBase implements IShapeExporter {
                                 // Gradient fill
                                 beginGradientFill(
                                         fillStyle.fillStyleType,
-                                        colorTransform.apply(fillStyle.gradient.gradientRecords),
+                                        colorTransform == null ? fillStyle.gradient.gradientRecords : colorTransform.apply(fillStyle.gradient.gradientRecords),
                                         fillStyle.gradientMatrix,
                                         fillStyle.gradient.spreadMode,
                                         fillStyle.gradient.interpolationMode,
@@ -328,6 +326,7 @@ public abstract class ShapeExporterBase implements IShapeExporter {
         int posY = Integer.MAX_VALUE;
         int lineStyleIdx = Integer.MAX_VALUE;
         if (path.size() > 0) {
+            boolean autoClose = true;
             beginLines();
             for (int i = 0; i < path.size(); i++) {
                 IEdge e = path.get(i);
@@ -346,9 +345,13 @@ public abstract class ShapeExporterBase implements IShapeExporter {
                         int startCapStyle = LINESTYLE2.ROUND_CAP;
                         int endCapStyle = LINESTYLE2.ROUND_CAP;
                         int joinStyle = LINESTYLE2.ROUND_JOIN;
-                        int miterLimitFactor = 3;
+                        float miterLimitFactor = 3f;
                         boolean hasFillFlag = false;
+                        autoClose = true;
                         if (lineStyle.isLineStyle2) {
+                            if (lineStyle.noClose) {
+                                autoClose = false;
+                            }
                             if (lineStyle.noHScaleFlag && lineStyle.noVScaleFlag) {
                                 scaleMode = "NONE";
                             } else if (lineStyle.noHScaleFlag) {
@@ -365,7 +368,7 @@ public abstract class ShapeExporterBase implements IShapeExporter {
                         }
                         lineStyle(
                                 lineStyle.width,
-                                colorTransform.apply(lineStyle.color),
+                                colorTransform == null ? lineStyle.color : colorTransform.apply(lineStyle.color),
                                 pixelHintingFlag,
                                 scaleMode,
                                 startCapStyle,
@@ -408,7 +411,8 @@ public abstract class ShapeExporterBase implements IShapeExporter {
                 posX = e.getToX();
                 posY = e.getToY();
             }
-            endLines();
+            IEdge firstEdge = path.get(0);
+            endLines(autoClose && firstEdge.getFromX() == posX && firstEdge.getFromY() == posY);
         }
     }
 

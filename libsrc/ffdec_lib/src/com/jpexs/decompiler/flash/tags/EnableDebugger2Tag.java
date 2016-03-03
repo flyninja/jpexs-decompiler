@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -36,7 +36,7 @@ import java.io.IOException;
  * @author JPEXS
  */
 @SWFVersion(from = 6)
-public class EnableDebugger2Tag extends Tag implements PasswordTag {
+public final class EnableDebugger2Tag extends Tag implements PasswordTag {
 
     public static final int ID = 64;
 

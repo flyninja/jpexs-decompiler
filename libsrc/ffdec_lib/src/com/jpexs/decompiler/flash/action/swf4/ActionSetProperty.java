@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,6 +18,8 @@ package com.jpexs.decompiler.flash.action.swf4;
 
 import com.jpexs.decompiler.flash.BaseLocalData;
 import com.jpexs.decompiler.flash.action.Action;
+import com.jpexs.decompiler.flash.action.ActionScriptObject;
+import com.jpexs.decompiler.flash.action.LocalDataArea;
 import com.jpexs.decompiler.flash.action.model.DecrementActionItem;
 import com.jpexs.decompiler.flash.action.model.DirectValueActionItem;
 import com.jpexs.decompiler.flash.action.model.GetPropertyActionItem;
@@ -50,6 +52,21 @@ public class ActionSetProperty extends Action {
     @Override
     public String toString() {
         return "SetProperty";
+    }
+
+    @Override
+    public boolean execute(LocalDataArea lda) {
+        if (lda.stack.size() < 3) {
+            return false;
+        }
+        Object value = lda.pop();
+        int index = (int) (double) lda.popAsNumber();
+        String target = lda.popAsString();
+        Object member = lda.stage.getMember(target);
+        if (member instanceof ActionScriptObject) {
+            ((ActionScriptObject) member).setProperty(index, value);
+        }
+        return true;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,7 +40,7 @@ public class AndItem extends BinaryOpItem {
     }
 
     public AndItem(GraphSourceItem src, GraphSourceItem lineStartIns, GraphTargetItem leftSide, GraphTargetItem rightSide) {
-        super(src, lineStartIns, PRECEDENCE_LOGICALAND, leftSide, rightSide, "&&");
+        super(src, lineStartIns, PRECEDENCE_LOGICALAND, leftSide, rightSide, "&&", "Boolean", "Boolean");
         this.leftSide = leftSide;
         this.rightSide = rightSide;
     }

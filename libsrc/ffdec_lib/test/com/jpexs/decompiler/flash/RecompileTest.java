@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,6 +41,7 @@ public class RecompileTest extends FileTestBase {
     @BeforeClass
     public void init() {
         Configuration.autoDeobfuscate.set(false);
+        Configuration.simplifyExpressions.set(false);
     }
 
     public static final String TESTDATADIR = "testdata/recompile";
@@ -48,7 +49,7 @@ public class RecompileTest extends FileTestBase {
     @Test(dataProvider = "provideFiles")
     public void testAS3InstructionParsing(String filePath) {
         try {
-            Configuration.debugCopy.set(false);
+            Configuration._debugCopy.set(false);
             try (FileInputStream fis = new FileInputStream(filePath)) {
                 SWF swf = new SWF(new BufferedInputStream(fis), false);
                 for (ABCContainerTag abcTag : swf.getAbcList()) {
@@ -69,7 +70,7 @@ public class RecompileTest extends FileTestBase {
     public void testRecompile(String filePath) {
         try {
             try (FileInputStream fis = new FileInputStream(filePath)) {
-                Configuration.debugCopy.set(true);
+                Configuration._debugCopy.set(true);
                 SWF swf = new SWF(new BufferedInputStream(fis), false);
                 swf.saveTo(new ByteArrayOutputStream());
             }
@@ -83,9 +84,9 @@ public class RecompileTest extends FileTestBase {
     @Test(dataProvider = "provideFiles")
     public void testTagEditing(String filePath) throws IOException, InterruptedException {
         try {
-            Configuration.debugCopy.set(false);
+            Configuration._debugCopy.set(false);
             SWF swf = new SWF(new BufferedInputStream(new FileInputStream(filePath)), false, false);
-            for (Tag tag : swf.tags) {
+            for (Tag tag : swf.getTags()) {
                 if (!(tag instanceof TagStub)) {
                     Tag tag2 = tag.cloneTag();
                     if (tag2 instanceof TagStub) {

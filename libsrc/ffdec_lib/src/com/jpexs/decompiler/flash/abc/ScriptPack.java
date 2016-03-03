@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS, All rights reserved.
+ *  Copyright (C) 2010-2016 JPEXS, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,8 +37,6 @@ import com.jpexs.decompiler.flash.exporters.modes.ScriptExportMode;
 import com.jpexs.decompiler.flash.exporters.settings.ScriptExportSettings;
 import com.jpexs.decompiler.flash.helpers.FileTextWriter;
 import com.jpexs.decompiler.flash.helpers.GraphTextWriter;
-import com.jpexs.decompiler.flash.helpers.HighlightedText;
-import com.jpexs.decompiler.flash.helpers.HighlightedTextWriter;
 import com.jpexs.decompiler.flash.helpers.NulWriter;
 import com.jpexs.decompiler.flash.helpers.hilight.Highlighting;
 import com.jpexs.decompiler.flash.tags.Tag;
@@ -132,16 +130,21 @@ public class ScriptPack extends AS3ClassTreeItem {
         return scriptName;
     }
 
+    public File getExportFile(String directory, String extension) {
+
+        String scriptName = getPathScriptName();
+        DottedChain packageName = getPathPackage();
+        File outDir = new File(directory + File.separatorChar + packageName.toFilePath());
+        String fileName = outDir.toString() + File.separator + Helper.makeFileName(scriptName) + extension;
+        return new File(fileName);
+    }
+
     public File getExportFile(String directory, ScriptExportSettings exportSettings) {
         if (exportSettings.singleFile) {
             return null;
         }
 
-        String scriptName = getPathScriptName();
-        DottedChain packageName = getPathPackage();
-        File outDir = new File(directory + File.separatorChar + packageName.toFilePath());
-        String fileName = outDir.toString() + File.separator + Helper.makeFileName(scriptName) + exportSettings.getFileExtension();
-        return new File(fileName);
+        return getExportFile(directory, exportSettings.getFileExtension());
     }
 
     /*public String getPath() {

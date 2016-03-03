@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2010-2015 JPEXS
+ *  Copyright (C) 2010-2016 JPEXS
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ import com.jpexs.decompiler.flash.abc.avm2.instructions.InstructionDefinition;
 import com.jpexs.decompiler.flash.action.Action;
 import com.jpexs.decompiler.flash.action.ActionLocalData;
 import com.jpexs.decompiler.flash.action.LocalDataArea;
+import com.jpexs.decompiler.flash.action.Stage;
 import com.jpexs.decompiler.flash.action.swf4.ActionAdd;
 import com.jpexs.decompiler.flash.action.swf4.ActionAnd;
 import com.jpexs.decompiler.flash.action.swf4.ActionAsciiToChar;
@@ -446,7 +447,7 @@ public class FlashPlayerTest {
                     Action opAction = getOpAction(i);
 
                     if (i >= 13 + 23) {
-                        newActions.add(new ActionPush("mystring_árvíztűrő_tükörfúrógép"));
+                        newActions.add(new ActionPush("mystring_\u00E1rv\u00EDzt\u0171r\u0151_t\u00FCk\u00F6rf\u00FAr\u00F3g\u00E9p"));
                     }
 
                     Object p1o = pushes[p1];
@@ -488,7 +489,7 @@ public class FlashPlayerTest {
 
                     String ffdecExecuteResult;
                     try {
-                        LocalDataArea lda = new LocalDataArea();
+                        LocalDataArea lda = new LocalDataArea(new Stage(null));
                         for (Action a : newActions) {
                             if (!a.execute(lda)) {
                                 fail();
